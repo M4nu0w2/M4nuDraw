@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Sfondo App Icon (Premium Dark Blue) -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e1b4b" />
+    </linearGradient>
+
+    <!-- Gradiente della lettera M (Vibrante Neon) -->
+    <linearGradient id="mGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="50%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+
+    <!-- Gradiente per la matita -->
+    <linearGradient id="pencilGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ec4899" />
+      <stop offset="100%" stop-color="#f43f5e" />
+    </linearGradient>
+
+    <!-- Gradiente per la gomma rosa della matita -->
+    <linearGradient id="eraserGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f472b6" />
+      <stop offset="100%" stop-color="#fb7185" />
+    </linearGradient>
+
+    <!-- Filtro Neon Glow -->
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Sfondo Icona con bordo scuro ed elegante -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" stroke="#312e81" stroke-width="12" />
+
+  <!-- EFFETTO LUCE NEON SULLA LETTERA "M" -->
+  <g filter="url(#neonGlow)">
+    <!-- Gamba Sinistra della "M" -->
+    <rect x="120" y="150" width="46" height="210" rx="23" fill="url(#mGrad)" />
+
+    <!-- Tratto Diagonale Centrale (V) della "M" -->
+    <path d="M 143,173 L 256,290 L 369,173" fill="none" stroke="url(#mGrad)" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- GAMBA DESTRA DELLA "M" CONFORMATA COME MATITA CARTOON -->
+  <g id="pencilLeg">
+    <!-- Gomma superiore rosa -->
+    <path d="M 346,150 C 346,128 392,128 392,150 Z" fill="url(#eraserGrad)" stroke="#1e293b" stroke-width="10" stroke-linejoin="round" />
+
+    <!-- Ghiera metallica dorata -->
+    <rect x="346" y="150" width="46" height="22" fill="#e2e8f0" stroke="#1e293b" stroke-width="10" />
+    <line x1="352" y1="161" x2="386" y2="161" stroke="#94a3b8" stroke-width="3" />
+
+    <!-- Corpo in legno colorato (Cilindro della Matita) -->
+    <rect x="346" y="172" width="46" height="130" rx="6" fill="url(#pencilGrad)" stroke="#1e293b" stroke-width="10" />
+    <line x1="361" y1="184" x2="361" y2="290" stroke="#1e293b" stroke-width="4" opacity="0.15" />
+    <line x1="377" y1="184" x2="377" y2="290" stroke="#1e293b" stroke-width="4" opacity="0.15" />
+
+    <!-- Punta di legno temperato -->
+    <path d="M 346,302 L 369,355 L 392,302 Z" fill="#fed7aa" stroke="#1e293b" stroke-width="10" stroke-linejoin="round" />
+
+    <!-- Mina colorata di grafite (in tinta con la M) -->
+    <path d="M 361,336 L 369,355 L 377,336 Z" fill="#ec4899" stroke="#1e293b" stroke-width="3" stroke-linejoin="round" />
+
+    <!-- Faccina Simpatica sulla Matita -->
+    <!-- Occhi felici -->
+    <circle cx="359" cy="225" r="4.5" fill="#1e293b" />
+    <circle cx="379" cy="225" r="4.5" fill="#1e293b" />
+    
+    <!-- Guance rosse -->
+    <circle cx="354" cy="232" r="3" fill="#f43f5e" opacity="0.6" />
+    <circle cx="384" cy="232" r="3" fill="#f43f5e" opacity="0.6" />
+
+    <!-- Sorrisone -->
+    <path d="M 364,233 C 366,238 372,238 374,233" stroke="#1e293b" stroke-width="4" stroke-linecap="round" fill="none" />
+  </g>
+
+  <!-- Piccole scintille luminose decorative per un tocco premium -->
+  <path d="M 256,80 L 259,90 L 269,93 L 259,96 L 256,106 L 253,96 L 243,93 L 253,90 Z" fill="#facc15" filter="url(#neonGlow)" />
+  <path d="M 90,280 L 92,287 L 99,289 L 92,291 L 90,298 L 88,291 L 81,289 L 88,287 Z" fill="#38bdf8" filter="url(#neonGlow)" />
+</svg>
