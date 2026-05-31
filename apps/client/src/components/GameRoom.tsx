@@ -32,6 +32,15 @@ interface GameRoomProps {
   onBackToLobby?: () => void;
 }
 
+const EMOJIS = ['😂', '😮', '🔥', '🎉', '👑', '💩'];
+
+const THEMES = [
+  { id: 'cyberpunk', name: 'Cyberpunk', icon: '🌌' },
+  { id: 'matrix', name: 'Matrix', icon: '🟢' },
+  { id: 'sunset', name: 'Sunset', icon: '🌅' },
+  { id: 'vaporwave', name: 'Vaporwave', icon: '🌸' }
+];
+
 export const GameRoom: React.FC<GameRoomProps> = ({
   room,
   currentPlayerId,
@@ -50,7 +59,44 @@ export const GameRoom: React.FC<GameRoomProps> = ({
   const [selectedRounds, setSelectedRounds] = useState(3);
   const [copied, setCopied] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
+  
+  // STATO PER TEMI E PARTICLE DI REACTION EMOJI
+  const [theme, setTheme] = useState(() => localStorage.getItem('m4nu_theme') || 'cyberpunk');
+  const [emojiParticles, setEmojiParticles] = useState<{ id: number; char: string; left: number }[]>([]);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Applica il tema al body
+  useEffect(() => {
+    THEMES.forEach((t) => {
+      document.body.classList.remove(`theme-${t.id}`);
+    });
+    document.body.classList.add(`theme-${theme}`);
+    localStorage.setItem('m4nu_theme', theme);
+  }, [theme]);
+
+  // Gestione Socket per Emojis
+  useEffect(() => {
+    const handleEmojiReaction = (_userId: string, emoji: string) => {
+      const id = Date.now() + Math.random();
+      const left = Math.random() * 85 + 5; // dal 5% al 90%
+      setEmojiParticles((prev) => [...prev, { id, char: emoji, left }]);
+      
+      // Auto-rimozione della particle dopo 3 secondi (fine animazione floatUp)
+      setTimeout(() => {
+        setEmojiParticles((prev) => prev.filter((p) => p.id !== id));
+      }, 3000);
+    };
+
+    socket.on('emojiReaction', handleEmojiReaction);
+    return () => {
+      socket.off('emojiReaction', handleEmojiReaction);
+    };
+  }, [socket]);
+
+  const handleSendEmoji = (emoji: string) => {
+    socket.emit('emojiReaction', emoji);
+  };
 
   const handleToggleSound = () => {
     const nextVal = soundManager.toggle();
@@ -114,6 +160,17 @@ export const GameRoom: React.FC<GameRoomProps> = ({
       {/* Background blobs decorativi */}
       <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full filter blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-pink-600/10 rounded-full filter blur-[120px] pointer-events-none"></div>
+
+      {/* Renders Floating Emojis Reaction Particles */}
+      {emojiParticles.map((p) => (
+        <div
+          key={p.id}
+          style={{ left: `${p.left}%`, bottom: '20px' }}
+          className="emoji-particle select-none"
+        >
+          {p.char}
+        </div>
+      ))}
 
       {/* MODALE DI SCELTA PAROLA PER IL DISEGNATORE */}
       {room.status === 'PLAYING' && isDrawer && !room.wordChosen && wordChoices.length > 0 && (
@@ -189,6 +246,24 @@ export const GameRoom: React.FC<GameRoomProps> = ({
         )}
 
         <div className="flex items-center flex-wrap gap-3">
+          {/* Theme Customizer Switcher */}
+          <div className="flex gap-1 items-center bg-slate-950/85 border border-slate-850 p-1 rounded-xl">
+            {THEMES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTheme(t.id)}
+                className={`p-1.5 rounded-lg text-xs font-bold transition-all active:scale-90 cursor-pointer ${
+                  theme === t.id
+                    ? 'bg-slate-800 text-slate-100 border border-slate-700'
+                    : 'text-slate-500 hover:text-slate-350'
+                }`}
+                title={`Attiva tema ${t.name}`}
+              >
+                <span>{t.icon}</span>
+              </button>
+            ))}
+          </div>
+
           {/* Room ID Tag */}
           <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-850 px-3 py-1.5 rounded-xl text-sm font-semibold">
             <span className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Codice:</span>
@@ -222,10 +297,10 @@ export const GameRoom: React.FC<GameRoomProps> = ({
         </div>
       </header>
 
-      {/* Main Content Grid */}
+      {/* Main Grid Layout */}
       <main className="relative z-10 w-full max-w-7xl mx-auto flex-grow grid grid-cols-1 lg:grid-cols-4 gap-6">
         
-        {/* Left Side: Players List & Scores */}
+        {/* Left Side: Players List */}
         <section className="lg:col-span-1 flex flex-col backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 lg:h-[550px]">
           <h2 className="text-sm font-bold flex items-center justify-between mb-4 text-slate-200 border-b border-slate-850 pb-2">
             <span>Giocatori ({room.players.length}/8)</span>
@@ -237,7 +312,6 @@ export const GameRoom: React.FC<GameRoomProps> = ({
               const isMe = player.id === currentPlayerId;
               const isPlayerHost = player.id === room.ownerId;
               const isPlayerDrawer = player.id === room.currentDrawerId;
-              
               const hasGuessed = room.correctGuesserIds?.includes(player.id);
 
               return (
@@ -333,20 +407,18 @@ export const GameRoom: React.FC<GameRoomProps> = ({
           )}
         </section>
 
-        {/* Center: Drawing Area OR Waiting Screen */}
+        {/* Center: Drawing Area */}
         <section className="lg:col-span-2 flex flex-col backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 justify-center lg:h-[550px]">
           {room.status === 'FINISHED' ? (
-            /* Schermo Finale Podio dei Vincitori */
+            /* Winner podium */
             <div className="flex flex-col items-center justify-center flex-grow p-4 animate-fadeIn overflow-y-auto max-h-full pr-1">
               <h2 className="text-xl font-black bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-500 bg-clip-text text-transparent uppercase tracking-wider text-center filter drop-shadow-[0_2px_12px_rgba(245,158,11,0.2)] animate-pulse">
                 👑 Partita Terminata! 👑
               </h2>
               <p className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest mt-1 mb-6">Ecco il Podio Finale dei Campioni</p>
               
-              {/* Contenitore Podio 3D */}
               <div className="flex items-end justify-center gap-4 w-full max-w-sm mb-6 mt-2 h-[200px]">
-                
-                {/* 2° Posto - Argento */}
+                {/* 2° Posto */}
                 {room.players[1] && (
                   <div className="flex flex-col items-center flex-1 animate-[fadeIn_0.5s_ease-out_0.2s_both]">
                     <div className="relative group mb-2">
@@ -364,7 +436,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                   </div>
                 )}
 
-                {/* 1° Posto - Oro */}
+                {/* 1° Posto */}
                 {room.players[0] && (
                   <div className="flex flex-col items-center flex-1 animate-[fadeIn_0.5s_ease-out]">
                     <div className="relative group mb-2">
@@ -385,7 +457,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                   </div>
                 )}
 
-                {/* 3° Posto - Bronzo */}
+                {/* 3° Posto */}
                 {room.players[2] && (
                   <div className="flex flex-col items-center flex-1 animate-[fadeIn_0.5s_ease-out_0.4s_both]">
                     <div className="relative group mb-2">
@@ -402,10 +474,8 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                     </div>
                   </div>
                 )}
-
               </div>
 
-              {/* Azioni Finali */}
               <div className="w-full max-w-sm mt-4">
                 {isHost ? (
                   <button
@@ -416,13 +486,13 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                   </button>
                 ) : (
                   <div className="text-[10px] text-slate-500 font-extrabold text-center px-4 py-2.5 border border-slate-850 rounded-xl bg-slate-950/40 w-full animate-pulse tracking-wide">
-                    In attesa dell\'Host per iniziare una nuova partita...
+                    In attesa dell'Host per iniziare una nuova partita...
                   </div>
                 )}
               </div>
             </div>
           ) : room.status === 'LOBBY' ? (
-            /* Schermo di Attesa Lobby */
+            /* Lobby screen */
             <div className="flex flex-col items-center justify-center text-center p-8 flex-grow">
               <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4 animate-pulse">
                 <Users size={32} />
@@ -433,12 +503,10 @@ export const GameRoom: React.FC<GameRoomProps> = ({
               </p>
             </div>
           ) : (
-            /* Schermo del Canvas di Gioco */
+            /* Drawing Canvas area */
             <div className="flex flex-col flex-grow justify-center relative">
-              {/* Round Summary Overlay Screen */}
               {roundSummary && (
                 <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-xl z-30 rounded-2xl flex flex-col items-center justify-center p-6 border border-purple-500/20 shadow-[0_0_50px_rgba(139,92,246,0.15)] animate-[fadeIn_0.3s_ease-out]">
-                  {/* Neon Crown/Trophy Icon */}
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-yellow-500/20 border border-yellow-500/30 text-yellow-400 flex items-center justify-center mb-2 shadow-[0_0_15px_rgba(245,158,11,0.25)] animate-bounce">
                     <span className="text-3xl">🏆</span>
                   </div>
@@ -454,7 +522,6 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                     </span>
                   </div>
 
-                  {/* Leaderboard/Classifica dei punti guadagnati */}
                   <div className="w-full max-w-sm bg-slate-900/60 border border-slate-850/80 rounded-2xl p-4 flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
                     <div className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold pb-1.5 border-b border-slate-850">
                       Punti Guadagnati in questo Turno:
@@ -470,11 +537,9 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                           className="flex items-center justify-between p-2 rounded-xl bg-slate-950/60 border border-slate-850/40 hover:border-slate-800 transition-all duration-150"
                         >
                           <div className="flex items-center gap-2">
-                            {/* Piccolo avatar */}
                             <div className="w-7 h-7 flex items-center justify-center overflow-visible bg-transparent">
                               <ModularAvatar avatar={playerAvatar} size={28} animate={false} />
                             </div>
-                            {/* Nome e ruolo */}
                             <div className="flex flex-col">
                               <div className="flex items-center gap-1">
                                 <span className="text-xs font-bold text-slate-200">{result.username}</span>
@@ -492,7 +557,6 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                             </div>
                           </div>
 
-                          {/* Punteggio Guadagnato */}
                           <div className="flex items-center gap-1.5">
                             {result.pointsEarned > 0 ? (
                               <span className="text-xs font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg animate-[pulse_1.5s_infinite]">
@@ -511,7 +575,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                 </div>
               )}
 
-              {/* Barra Temporale (Timer) Dinamica */}
+              {/* Time progress bar */}
               {room.timeLeft !== undefined && room.maxTime !== undefined && (
                 <div className="w-full mb-4 flex flex-col gap-1.5 animate-fadeIn">
                   <div className="flex items-center justify-between text-[10px] font-bold text-slate-400">
@@ -541,7 +605,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                 </div>
               )}
 
-              {/* Overlay di attesa scelta parola */}
+              {/* Waiting overlay for word choice */}
               {!room.wordChosen && (
                 <div className="absolute inset-0 bg-slate-950/90 z-20 rounded-2xl flex flex-col items-center justify-center text-center p-6 border border-slate-850">
                   <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-3 animate-spin">
@@ -563,7 +627,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
           )}
         </section>
 
-        {/* Right Side: Chat Panel */}
+        {/* Right Side: Chat & Emoji Reaction Panel */}
         <section className="lg:col-span-1 flex flex-col backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden h-[420px] lg:h-[550px]">
           {/* Chat Header */}
           <div className="px-4 py-3 border-b border-slate-850/60 flex items-center gap-2 bg-slate-900/20">
@@ -571,7 +635,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
             <h2 className="font-bold text-slate-200 text-xs tracking-wide">CHAT DELLA LOBBY</h2>
           </div>
 
-          {/* Messages List */}
+          {/* Messages list */}
           <div className="flex-grow p-4 overflow-y-auto space-y-3 flex flex-col bg-slate-950/20">
             {messages.length === 0 ? (
               <div className="flex-grow flex flex-col items-center justify-center text-center p-4 text-slate-600">
@@ -604,12 +668,10 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                 
                 return (
                   <div key={msg.id} className="flex gap-2 items-start animate-fadeIn">
-                    {/* Mini Avatar */}
                     <div 
                       className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 shadow-md overflow-hidden border border-slate-800/30 bg-slate-950"
                       dangerouslySetInnerHTML={{ __html: avatar.svgHtml }}
                     />
-                    {/* Message Body */}
                     <div className="flex-grow min-w-0">
                       <div className="flex items-baseline gap-1.5">
                         <span className={`text-[11px] font-extrabold truncate ${isMe ? 'text-blue-400' : 'text-slate-300'}`}>
@@ -628,7 +690,21 @@ export const GameRoom: React.FC<GameRoomProps> = ({
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Chat Input Form */}
+          {/* Quick Interactive Emojis reactions strip */}
+          <div className="flex justify-around bg-slate-950/65 border-t border-slate-850/60 p-2 gap-1">
+            {EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => handleSendEmoji(emoji)}
+                className="text-lg hover:scale-130 active:scale-95 transition-transform duration-150 p-1 bg-slate-950 border border-slate-850 hover:border-slate-750 rounded-xl cursor-pointer"
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+
+          {/* Chat Form */}
           <form onSubmit={handleSend} className="p-3 border-t border-slate-850/60 bg-slate-900/40">
             <div className="relative flex items-center">
               <input

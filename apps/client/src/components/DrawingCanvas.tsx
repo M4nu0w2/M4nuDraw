@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
 import { ClientToServerEvents, ServerToClientEvents, DrawData } from '@skribbl/shared';
 import { Trash2, Edit2, Eraser } from 'lucide-react';
+import { soundManager } from '../utils/sound';
 
 interface DrawingCanvasProps {
   isDrawer: boolean;
@@ -35,6 +36,9 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
   const [color, setColor] = useState('#000000');
   const [size, setSize] = useState(8);
   const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
+  const [isRainbow, setIsRainbow] = useState(false);
+  const [isSymmetric, setIsSymmetric] = useState(false);
+  const [shake, setShake] = useState(false);
   
   // Traccia le coordinate precedenti
   const prevCoordsRef = useRef<{ x: number; y: number } | null>(null);
@@ -91,14 +95,25 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     };
 
+    const handleBombCanvas = () => {
+      setShake(true);
+      soundManager.playBombExplosion();
+      setTimeout(() => setShake(false), 600);
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    };
+
     socket.on('drawData', handleDrawData);
     socket.on('drawHistory', handleDrawHistory);
     socket.on('clearCanvas', handleClearCanvas);
+    socket.on('bombCanvas', handleBombCanvas);
 
     return () => {
       socket.off('drawData', handleDrawData);
       socket.off('drawHistory', handleDrawHistory);
       socket.off('clearCanvas', handleClearCanvas);
+      socket.off('bombCanvas', handleBombCanvas);
     };
   }, [socket]);
 
@@ -152,9 +167,13 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
     const prevCoords = prevCoordsRef.current;
 
     if (prevCoords) {
+      const strokeColor = tool === 'eraser' 
+        ? '#ffffff' 
+        : (isRainbow ? `hsl(${(Date.now() / 12) % 360}, 100%, 50%)` : color);
+
+      // Tratto standard
       ctx.beginPath();
-      // Se si usa la gomma, il colore di disegno diventa bianco (corrispondente allo sfondo)
-      ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : color;
+      ctx.strokeStyle = strokeColor;
       ctx.lineWidth = size;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -162,14 +181,36 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
       ctx.lineTo(coords.x, coords.y);
       ctx.stroke();
 
-      // Invia i dati di disegno al backend in tempo reale
       const drawData: DrawData = {
         tool,
-        color: tool === 'eraser' ? '#ffffff' : color,
+        color: strokeColor,
         size,
         points: [prevCoords.x, prevCoords.y, coords.x, coords.y]
       };
       socket.emit('draw', drawData);
+
+      // Tratto Simmetrico (Symmetry / Mirror Mode)
+      if (isSymmetric) {
+        const mx1 = 800 - prevCoords.x;
+        const mx2 = 800 - coords.x;
+
+        ctx.beginPath();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.moveTo(mx1, prevCoords.y);
+        ctx.lineTo(mx2, coords.y);
+        ctx.stroke();
+
+        const mirrorData: DrawData = {
+          tool,
+          color: strokeColor,
+          size,
+          points: [mx1, prevCoords.y, mx2, coords.y]
+        };
+        socket.emit('draw', mirrorData);
+      }
     }
 
     prevCoordsRef.current = coords;
@@ -185,10 +226,15 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
     socket.emit('clearCanvas');
   };
 
+  const handleBomb = () => {
+    if (!isDrawer) return;
+    socket.emit('bombCanvas');
+  };
+
   return (
     <div className="w-full flex flex-col gap-4">
       {/* Contenitore Canvas con aspect ratio fisso per garantire sincronia coordinate */}
-      <div className="relative w-full aspect-[8/5] bg-white rounded-2xl border-2 border-slate-800 shadow-lg overflow-hidden group">
+      <div className={`relative w-full aspect-[8/5] bg-white rounded-2xl border-2 border-slate-800 shadow-lg overflow-hidden group transition-all duration-300 ${shake ? 'animate-shake ring-4 ring-rose-500/40 border-rose-500 shadow-rose-500/10' : ''}`}>
         <canvas
           ref={canvasRef}
           width={800}
@@ -215,18 +261,56 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
           {/* Toggles Strumenti (Penna / Gomma) */}
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setTool('pen')}
+              onClick={() => {
+                setTool('pen');
+                setIsRainbow(false);
+              }}
               className={`p-2 rounded-xl border active:scale-95 transition-all duration-150 ${
-                tool === 'pen'
+                tool === 'pen' && !isRainbow
                   ? 'bg-blue-600 border-blue-500 text-white'
                   : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
               }`}
-              title="Penna"
+              title="Penna Classica"
             >
               <Edit2 size={18} />
             </button>
+            
             <button
-              onClick={() => setTool('eraser')}
+              onClick={() => {
+                setIsRainbow(!isRainbow);
+                setTool('pen');
+              }}
+              className={`p-2 rounded-xl border active:scale-95 transition-all duration-150 flex items-center justify-center ${
+                isRainbow && tool === 'pen'
+                  ? 'rainbow-glow border-purple-500 text-slate-950 font-bold'
+                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+              style={{ minWidth: '38px', minHeight: '38px' }}
+              title="Pennello Arcobaleno 🌈"
+            >
+              <span className="text-sm">🌈</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setIsSymmetric(!isSymmetric);
+              }}
+              className={`p-2 rounded-xl border active:scale-95 transition-all duration-150 flex items-center justify-center ${
+                isSymmetric
+                  ? 'bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-500/20'
+                  : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+              style={{ minWidth: '38px', minHeight: '38px' }}
+              title="Disegno Specchio / Simmetrico 🪞"
+            >
+              <span className="text-sm">🪞</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setTool('eraser');
+                setIsRainbow(false);
+              }}
               className={`p-2 rounded-xl border active:scale-95 transition-all duration-150 ${
                 tool === 'eraser'
                   ? 'bg-blue-600 border-blue-500 text-white'
@@ -239,15 +323,26 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
             
             <div className="h-6 w-[1px] bg-slate-850 mx-2" />
 
-            {/* Pulsante Pulisci Lavagna */}
-            <button
-              onClick={handleClear}
-              className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/30 text-rose-400 active:scale-95 transition-all duration-150 flex items-center gap-1.5 text-xs font-bold"
-              title="Pulisci Lavagna"
-            >
-              <Trash2 size={16} />
-              Pulisci
-            </button>
+            {/* Pulsanti Pulisci & Bomba */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleClear}
+                className="p-2 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 active:scale-95 transition-all duration-150 flex items-center gap-1 text-xs font-bold"
+                title="Pulisci Classico"
+              >
+                <Trash2 size={14} />
+                Pulisci
+              </button>
+              
+              <button
+                onClick={handleBomb}
+                className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/30 text-rose-400 active:scale-95 transition-all duration-150 flex items-center gap-1.5 text-xs font-extrabold"
+                title="Esplosione Bomba (Svuota con scuotimento e suono!)"
+              >
+                <span>💣</span>
+                Bomba!
+              </button>
+            </div>
           </div>
 
           {/* Selettore Spessore Pennello */}
@@ -259,7 +354,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
                 className={`px-3 py-1 text-[10px] font-bold rounded-lg transition-all duration-150 ${
                   size === b.size
                     ? 'bg-slate-800 text-slate-100'
-                    : 'text-slate-500 hover:text-slate-300'
+                    : 'text-slate-500 hover:text-slate-350'
                 }`}
               >
                 {b.label}
@@ -274,11 +369,12 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
                 key={c}
                 onClick={() => {
                   setColor(c);
-                  setTool('pen'); // Commuta automaticamente sulla penna quando selezioni un colore
+                  setTool('pen');
+                  setIsRainbow(false);
                 }}
                 style={{ backgroundColor: c }}
                 className={`w-6 h-6 rounded-full border transition-all duration-150 transform hover:scale-115 active:scale-90 ${
-                  color === c && tool === 'pen'
+                  color === c && tool === 'pen' && !isRainbow
                     ? 'border-blue-400 ring-2 ring-blue-500/30 scale-110'
                     : 'border-slate-800 hover:border-slate-600'
                 }`}

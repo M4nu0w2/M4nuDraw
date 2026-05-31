@@ -38,8 +38,10 @@ export interface ClientToServerEvents {
   selectWord: (word: string) => void;
   draw: (data: DrawData) => void;
   clearCanvas: () => void;
+  bombCanvas: () => void;
   chatMessage: (message: string) => void;
   backToLobby: () => void;
+  emojiReaction: (emoji: string) => void;
 }
 
 export interface RoundResult {
@@ -57,6 +59,7 @@ export interface ServerToClientEvents {
   drawData: (data: DrawData) => void;
   drawHistory: (history: DrawData[]) => void;
   clearCanvas: () => void;
+  bombCanvas: () => void;
   chatMessage: (userId: string, message: string) => void;
   gameStarted: () => void;
   turnStarted: (drawerId: string) => void;
@@ -64,6 +67,7 @@ export interface ServerToClientEvents {
   secretWord: (word: string) => void;
   correctGuess: (userId: string) => void;
   roundEnded: (word: string, results: RoundResult[]) => void;
+  emojiReaction: (userId: string, emoji: string) => void;
 }
 
 export interface DrawData {

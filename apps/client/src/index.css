@@ -2,6 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+:root, body.theme-cyberpunk {
+  --bg-slate-950: 2 6 23;
+  --bg-slate-900: 15 23 42;
+  --border-slate-800: 30 41 59;
+  --accent-color: 139 92 246;
+  --accent-color-dark: 79 70 229;
+  --accent-color-light: 244 114 182;
+  --text-gradient: linear-gradient(to right, #60a5fa, #a78bfa, #f472b6);
+}
+
+body.theme-matrix {
+  --bg-slate-950: 5 18 10;
+  --bg-slate-900: 10 32 18;
+  --border-slate-800: 20 64 36;
+  --accent-color: 16 185 129;
+  --accent-color-dark: 4 120 87;
+  --accent-color-light: 52 211 153;
+  --text-gradient: linear-gradient(to right, #34d399, #10b981, #059669);
+}
+
+body.theme-sunset {
+  --bg-slate-950: 24 10 5;
+  --bg-slate-900: 42 18 8;
+  --border-slate-800: 64 30 14;
+  --accent-color: 245 158 11;
+  --accent-color-dark: 217 119 6;
+  --accent-color-light: 251 113 133;
+  --text-gradient: linear-gradient(to right, #f43f5e, #f59e0b, #fb7185);
+}
+
+body.theme-vaporwave {
+  --bg-slate-950: 26 6 38;
+  --bg-slate-900: 44 10 60;
+  --border-slate-800: 74 16 98;
+  --accent-color: 236 72 153;
+  --accent-color-dark: 219 39 119;
+  --accent-color-light: 56 189 248;
+  --text-gradient: linear-gradient(to right, #38bdf8, #ec4899, #f472b6);
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -9,6 +49,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: rgb(var(--bg-slate-950));
+  transition: background-color 0.4s ease, border-color 0.4s ease;
 }
 
 @keyframes shimmer {
@@ -33,4 +75,60 @@ body {
 
 .animate-fadeIn {
   animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 5 wild new animations */
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10% { transform: translate(-3px, -2px) rotate(-0.5deg); }
+  20% { transform: translate(3px, 2px) rotate(0.5deg); }
+  30% { transform: translate(-4px, 1px) rotate(-1deg); }
+  40% { transform: translate(2px, -1px) rotate(1deg); }
+  50% { transform: translate(-3px, 3px) rotate(-0.5deg); }
+  60% { transform: translate(4px, -2px) rotate(0.5deg); }
+  70% { transform: translate(-2px, -3px) rotate(-1deg); }
+  80% { transform: translate(3px, 1px) rotate(1deg); }
+  90% { transform: translate(-2px, 3px) rotate(-0.5deg); }
+}
+
+.animate-shake {
+  animation: shake 0.6s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(100px) scale(0.3) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(50px) scale(1.1) rotate(15deg);
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-400px) scale(1.4) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+.emoji-particle {
+  position: absolute;
+  pointer-events: none;
+  font-size: 2.2rem;
+  z-index: 1000;
+  animation: floatUp 3s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
+}
+
+@keyframes hueCycle {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.rainbow-glow {
+  background-image: linear-gradient(to right, #ff007f, #7f00ff, #00f0ff, #00ff7f, #ffea00, #ff007f);
+  background-size: 400% 400%;
+  animation: shimmer 8s linear infinite, hueCycle 4s linear infinite;
 }

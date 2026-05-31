@@ -134,6 +134,58 @@ class SoundManager {
     }
   }
 
+  // Special synth for Bomb clear explosion (White Noise & Low Frequency Rumble)
+  playBombExplosion() {
+    if (!this.enabled) return;
+    try {
+      const ctx = this.initCtx();
+      const now = ctx.currentTime;
+      
+      // 1. Rumble Oscillator
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.linearRampToValueAtTime(30, now + 0.65);
+      gain.gain.setValueAtTime(0.45, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.65);
+
+      // 2. White Noise blast for explosion hiss
+      const bufferSize = ctx.sampleRate * 0.5; // 0.5 seconds of noise
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      
+      const noiseFilter = ctx.createBiquadFilter();
+      noiseFilter.type = 'lowpass';
+      noiseFilter.frequency.setValueAtTime(800, now);
+      noiseFilter.frequency.exponentialRampToValueAtTime(80, now + 0.5);
+      
+      const noiseGain = ctx.createGain();
+      noiseGain.gain.setValueAtTime(0.50, now);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      
+      noise.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(ctx.destination);
+      
+      noise.start(now);
+      noise.stop(now + 0.5);
+    } catch (e) {
+      console.warn('Audio play failed:', e);
+    }
+  }
+
   toggle() {
     this.enabled = !this.enabled;
     localStorage.setItem('m4nudraw_sound_enabled', String(this.enabled));

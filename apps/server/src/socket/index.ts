@@ -333,6 +333,23 @@ export const setupSocket = (io: Server<ClientToServerEvents, ServerToClientEvent
       }
     });
 
+    socket.on('bombCanvas', () => {
+      const userInfo = socketToUserMap.get(socket.id);
+      if (userInfo) {
+        const { roomId } = userInfo;
+        roomDrawHistoryMap.set(roomId, []);
+        io.to(roomId).emit('bombCanvas');
+      }
+    });
+
+    socket.on('emojiReaction', (emoji) => {
+      const userInfo = socketToUserMap.get(socket.id);
+      if (userInfo) {
+        const { roomId } = userInfo;
+        io.to(roomId).emit('emojiReaction', socket.id, emoji);
+      }
+    });
+
     socket.on('chatMessage', (message) => {
       const userInfo = socketToUserMap.get(socket.id);
       if (userInfo) {
@@ -472,3 +489,5 @@ export const setupSocket = (io: Server<ClientToServerEvents, ServerToClientEvent
     });
   });
 };
+
+// Antigravity Wild Features Reload Hook

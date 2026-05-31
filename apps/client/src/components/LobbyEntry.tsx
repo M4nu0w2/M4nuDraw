@@ -18,11 +18,28 @@ interface LobbyEntryProps {
   onJoinRoom: (roomId: string, username: string, avatar: AvatarConfig) => void;
 }
 
+const THEMES = [
+  { id: 'cyberpunk', name: 'Cyberpunk', icon: '🌌' },
+  { id: 'matrix', name: 'Matrix', icon: '🟢' },
+  { id: 'sunset', name: 'Sunset', icon: '🌅' },
+  { id: 'vaporwave', name: 'Vaporwave', icon: '🌸' }
+];
+
 export const LobbyEntry: React.FC<LobbyEntryProps> = ({ onJoinRoom }) => {
   const [username, setUsername] = useState(() => localStorage.getItem('m4nu_username') || '');
   const [roomCode, setRoomCode] = useState('');
   const [error, setError] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
+  const [theme, setTheme] = useState(() => localStorage.getItem('m4nu_theme') || 'cyberpunk');
+
+  // Sincronizza il tema scelto
+  useEffect(() => {
+    THEMES.forEach((t) => {
+      document.body.classList.remove(`theme-${t.id}`);
+    });
+    document.body.classList.add(`theme-${theme}`);
+    localStorage.setItem('m4nu_theme', theme);
+  }, [theme]);
 
   // STATO ECONOMIA & PERSONALIZZAZIONE (LocalStorage)
   const [coins, setCoins] = useState<number>(() => {
@@ -216,14 +233,35 @@ export const LobbyEntry: React.FC<LobbyEntryProps> = ({ onJoinRoom }) => {
       <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-blue-600/20 rounded-full filter blur-[80px] animate-pulse"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full filter blur-[100px] animate-pulse delay-700"></div>
 
-      {/* Floating Header Audio controls */}
-      <button
-        onClick={handleToggleSound}
-        className="absolute top-6 right-6 p-3 rounded-full backdrop-blur-md bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700 shadow-xl active:scale-95 transition-all duration-200 z-50 cursor-pointer"
-        title={soundEnabled ? 'Disattiva Audio' : 'Attiva Audio'}
-      >
-        {soundEnabled ? <Volume2 size={20} className="text-blue-400" /> : <VolumeX size={20} className="text-slate-500" />}
-      </button>
+      {/* Floating Header Controls */}
+      <div className="absolute top-6 right-6 flex items-center gap-3 z-50">
+        {/* Theme Selector */}
+        <div className="flex gap-1 items-center bg-slate-900/60 backdrop-blur-md border border-slate-800 p-1.5 rounded-2xl shadow-xl">
+          {THEMES.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTheme(t.id)}
+              className={`p-1.5 rounded-lg text-sm font-bold transition-all active:scale-90 cursor-pointer ${
+                theme === t.id
+                  ? 'bg-slate-800 text-slate-100 border border-slate-700'
+                  : 'text-slate-500 hover:text-slate-350'
+              }`}
+              title={`Attiva tema ${t.name}`}
+            >
+              <span>{t.icon}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Audio control */}
+        <button
+          onClick={handleToggleSound}
+          className="p-3 rounded-full backdrop-blur-md bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700 shadow-xl active:scale-95 transition-all duration-200 cursor-pointer"
+          title={soundEnabled ? 'Disattiva Audio' : 'Attiva Audio'}
+        >
+          {soundEnabled ? <Volume2 size={20} className="text-blue-400" /> : <VolumeX size={20} className="text-slate-500" />}
+        </button>
+      </div>
 
       {/* DUAL COLUMN PREMIUM LAYOUT */}
       <div className="relative w-full max-w-4xl flex flex-col md:flex-row gap-8 items-stretch z-10 animate-[fadeIn_0.5s_ease-out]">
