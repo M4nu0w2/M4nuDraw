@@ -30,11 +30,12 @@ export interface Room {
   correctGuesserIds?: string[];
   currentRound?: number;
   maxRounds?: number;
+  wordCategory?: string;
 }
 
 export interface ClientToServerEvents {
   joinRoom: (roomId: string, username: string, avatar?: AvatarConfig) => void;
-  startGame: (maxRounds?: number) => void;
+  startGame: (maxRounds?: number, category?: string) => void;
   selectWord: (word: string) => void;
   draw: (data: DrawData) => void;
   clearCanvas: () => void;
@@ -42,6 +43,7 @@ export interface ClientToServerEvents {
   chatMessage: (message: string) => void;
   backToLobby: () => void;
   emojiReaction: (emoji: string) => void;
+  undoStroke: () => void;
 }
 
 export interface RoundResult {
@@ -75,4 +77,5 @@ export interface DrawData {
   color: string;
   size: number;
   points: number[];
+  strokeId?: number;
 }

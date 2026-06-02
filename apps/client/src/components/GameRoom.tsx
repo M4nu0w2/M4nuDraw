@@ -26,7 +26,7 @@ interface GameRoomProps {
   secretWord: string;
   onSendMessage: (message: string) => void;
   onLeaveRoom: () => void;
-  onStartGame: (maxRounds?: number) => void;
+  onStartGame: (maxRounds?: number, category?: string) => void;
   onSelectWord: (word: string) => void;
   roundSummary: { word: string; results: RoundResult[] } | null;
   onBackToLobby?: () => void;
@@ -57,6 +57,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
 }) => {
   const [messageText, setMessageText] = useState('');
   const [selectedRounds, setSelectedRounds] = useState(3);
+  const [selectedCategory, setSelectedCategory] = useState('generale');
   const [copied, setCopied] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
   
@@ -231,6 +232,11 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                   Turno {room.currentRound} di {room.maxRounds}
                 </span>
               )}
+              {room.status === 'PLAYING' && room.wordCategory && (
+                <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/15 border border-emerald-500/20 px-2.5 py-0.5 rounded-full select-none tracking-wide uppercase">
+                  🎨 {room.wordCategory}
+                </span>
+              )}
             </h1>
             <p className="text-xs text-slate-400 font-medium">
               {room.status === 'LOBBY' ? 'In attesa dell\'inizio della partita' : 'Disegna e indovina!'}
@@ -391,9 +397,35 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                       </button>
                     ))}
                   </div>
+                  
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 font-extrabold px-1 tracking-wider mt-1">
+                    <span>CATEGORIA DIZIONARIO:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 bg-slate-950 p-1 rounded-xl border border-slate-850/60 w-full">
+                    {[
+                      { id: 'generale', name: 'Classico 🇮🇹' },
+                      { id: 'animali', name: 'Animali 🦊' },
+                      { id: 'cibo', name: 'Cibo 🍕' },
+                      { id: 'geek', name: 'Geek 🎮' }
+                    ].map((cat) => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className={`flex-1 py-1 text-[10px] font-black rounded-lg transition-all duration-150 truncate ${
+                          selectedCategory === cat.id
+                            ? 'bg-purple-600 border border-purple-500 text-white shadow-md shadow-purple-500/25'
+                            : 'text-slate-500 hover:text-slate-350 hover:bg-slate-905'
+                        }`}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+
                   <button
-                    onClick={() => onStartGame(selectedRounds)}
-                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border border-blue-500/20 text-slate-100 hover:text-white rounded-xl font-bold active:scale-[0.98] shadow-lg shadow-blue-900/30 transition-all duration-150 mt-1"
+                    onClick={() => onStartGame(selectedRounds, selectedCategory)}
+                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border border-blue-500/20 text-slate-100 hover:text-white rounded-xl font-bold active:scale-[0.98] shadow-lg shadow-blue-900/30 transition-all duration-150 mt-2"
                   >
                     Avvia Partita
                   </button>
@@ -429,6 +461,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                     </div>
                     <span className="text-xs font-black text-slate-300 truncate max-w-[80px]">{room.players[1].username}</span>
                     <span className="text-[9px] font-bold text-slate-500">{room.players[1].score} XP</span>
+                    <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded mt-1 flex items-center gap-0.5">🪙 +5</span>
                     
                     <div className="w-full h-16 bg-gradient-to-t from-slate-900 via-slate-800 to-slate-700/80 border border-slate-700/40 rounded-t-xl mt-2 flex items-center justify-center shadow-lg">
                       <span className="text-sm font-black text-slate-400">2°</span>
@@ -448,6 +481,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                     </div>
                     <span className="text-sm font-black bg-gradient-to-r from-yellow-300 to-amber-400 bg-clip-text text-transparent truncate max-w-[90px]">{room.players[0].username}</span>
                     <span className="text-xs font-extrabold text-yellow-500">{room.players[0].score} XP</span>
+                    <span className="text-[10px] font-black text-amber-400 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded mt-1 flex items-center gap-0.5 shadow-sm shadow-amber-500/15">🪙 +10</span>
                     
                     <div className="w-full h-24 bg-gradient-to-t from-yellow-950/40 via-amber-900/40 to-yellow-600/30 border border-yellow-500/40 rounded-t-xl mt-2 flex flex-col items-center justify-center shadow-[0_0_25px_rgba(245,158,11,0.15)] relative overflow-hidden">
                       <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(245,158,11,0.15)_50%,transparent_75%)] bg-[length:250px_250px] animate-[shimmer_3s_infinite_linear]" />
@@ -468,6 +502,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                     </div>
                     <span className="text-xs font-black text-orange-400 truncate max-w-[80px]">{room.players[2].username}</span>
                     <span className="text-[9px] font-bold text-orange-550">{room.players[2].score} XP</span>
+                    <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded mt-1 flex items-center gap-0.5">🪙 +3</span>
                     
                     <div className="w-full h-12 bg-gradient-to-t from-slate-900 via-orange-950/20 to-orange-900/20 border border-orange-900/30 rounded-t-xl mt-2 flex items-center justify-center shadow-lg">
                       <span className="text-xs font-black text-orange-455">3°</span>

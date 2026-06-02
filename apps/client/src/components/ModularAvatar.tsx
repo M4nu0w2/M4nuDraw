@@ -34,6 +34,7 @@ export const AVAILABLE_MOUTHS = ['smile', 'tongue', 'mustache', 'bubblegum', 'su
 export const AVAILABLE_HATS = [
   { id: 'none', name: 'Nessuno', cost: 0 },
   { id: 'beanie', name: 'Berretto Neon', cost: 100 },
+  { id: 'antenna', name: 'Antenna Aliena 👽', cost: 150 },
   { id: 'pirate', name: 'Tricorno Pirata', cost: 250 },
   { id: 'chef', name: 'Cappello Chef', cost: 400 },
   { id: 'crown', name: 'Corona Regale', cost: 600 }
@@ -42,6 +43,7 @@ export const AVAILABLE_HATS = [
 export const AVAILABLE_GLASSES = [
   { id: 'none', name: 'Nessuno', cost: 0 },
   { id: 'pixel', name: 'Occhiali Thug', cost: 150 },
+  { id: 'glasses3d', name: 'Occhiali 3D 🔴🔵', cost: 200 },
   { id: 'vr', name: 'Visore Cyber', cost: 300 },
   { id: 'monocle', name: 'Monocolo Oro', cost: 450 }
 ];
@@ -49,6 +51,7 @@ export const AVAILABLE_GLASSES = [
 export const AVAILABLE_AURAS = [
   { id: 'none', name: 'Nessuno', cost: 0 },
   { id: 'neon', name: 'Aura Neon', cost: 350 },
+  { id: 'rainbow', name: 'Aura Arcobaleno 🌈', cost: 500 },
   { id: 'gold', name: 'Aureola Oro', cost: 700 },
   { id: 'fire', name: 'Aura di Fuoco', cost: 1000 }
 ];
@@ -57,6 +60,7 @@ export const AVAILABLE_OUTFITS = [
   { id: 'none', name: 'Spalle Scoperte', cost: 0 },
   { id: 'retro', name: 'T-Shirt Neon', cost: 200 },
   { id: 'suit', name: 'Smoking Elegante', cost: 400 },
+  { id: 'wizard', name: 'Toga da Mago 🧙‍♂️', cost: 500 },
   { id: 'pirate', name: 'Gabbana Pirata', cost: 600 },
   { id: 'space', name: 'Tuta Spaziale', cost: 800 }
 ];
@@ -123,6 +127,15 @@ export const ModularAvatar: React.FC<ModularAvatarProps> = ({
       );
     }
 
+    if (aura === 'rainbow') {
+      return (
+        <g className={animate ? 'animate-[spin_12s_linear_infinite]' : ''}>
+          <circle cx="50" cy="50" r="45" fill="none" stroke="url(#auraRainbowGrad)" strokeWidth="6" opacity="0.9" />
+          <circle cx="50" cy="50" r="45" fill="none" stroke="url(#auraRainbowGrad)" strokeWidth="2" opacity="0.4" className="animate-pulse" />
+        </g>
+      );
+    }
+
     return null;
   };
 
@@ -174,6 +187,20 @@ export const ModularAvatar: React.FC<ModularAvatarProps> = ({
             {/* Logo/Badge rotondo spaziale sul petto */}
             <circle cx="50" cy="78" r="5" fill="#3b82f6" stroke="#1e293b" strokeWidth="1.5" />
             <circle cx="48" cy="76.5" r="1.5" fill="#ffffff" />
+          </g>
+        );
+      case 'wizard':
+        return (
+          <g>
+            {/* Toga da mago viola */}
+            <path d="M 20,95 C 20,70 32,64 50,64 C 68,64 80,70 80,95 Z" fill="#581c87" stroke="#1e293b" strokeWidth="4.5" />
+            {/* Colletto dorato */}
+            <path d="M 36,64 L 50,80 L 64,64 Z" fill="#facc15" stroke="#1e293b" strokeWidth="2.5" />
+            {/* Stelline gialle ricamate */}
+            <path d="M 28,78 L 30,80 L 28,82 L 26,80 Z" fill="#fef08a" />
+            <path d="M 72,78 L 74,80 L 72,82 L 70,80 Z" fill="#fef08a" />
+            {/* Luna ricamata */}
+            <path d="M 47,84 C 51,84 53,81 53,78 C 53,79 51,80 49,80 C 47,80 45,78 45,76 C 45,79 46,84 47,84 Z" fill="#fef08a" />
           </g>
         );
       case 'none':
@@ -335,6 +362,24 @@ export const ModularAvatar: React.FC<ModularAvatarProps> = ({
       );
     }
 
+    if (glasses === 'glasses3d') {
+      return (
+        <g>
+          {/* Astina e montatura nera */}
+          <rect x="22" y="41" width="56" height="11" rx="2" fill="#111827" stroke="#111827" strokeWidth="1" />
+          <rect x="16" y="43" width="10" height="4" fill="#111827" />
+          <rect x="74" y="43" width="10" height="4" fill="#111827" />
+          {/* Lente Sinistra Azzurra 3D */}
+          <rect x="26" y="43" width="20" height="7" rx="1" fill="#06b6d4" opacity="0.9" />
+          {/* Lente Destra Rossa 3D */}
+          <rect x="54" y="43" width="20" height="7" rx="1" fill="#ef4444" opacity="0.9" />
+          {/* Riflessi bianchi sulle lenti */}
+          <line x1="28" y1="44" x2="31" y2="48" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
+          <line x1="56" y1="44" x2="59" y2="48" stroke="#ffffff" strokeWidth="1" strokeLinecap="round" />
+        </g>
+      );
+    }
+
     return null;
   };
 
@@ -397,6 +442,26 @@ export const ModularAvatar: React.FC<ModularAvatarProps> = ({
       );
     }
 
+    if (hat === 'antenna') {
+      return (
+        <g>
+          {/* Stelo antenna grigia */}
+          <path d="M 50,22 Q 47,10 50,6" fill="none" stroke="#6b7280" strokeWidth="3" strokeLinecap="round" />
+          {/* Sfera luminosa verde alieno */}
+          <circle
+            cx="50"
+            cy="6"
+            r="5"
+            fill="#22c55e"
+            stroke="#15803d"
+            strokeWidth="1.5"
+            className={animate ? 'animate-pulse' : ''}
+            filter="url(#glowGreen)"
+          />
+        </g>
+      );
+    }
+
     return null;
   };
 
@@ -441,8 +506,7 @@ export const ModularAvatar: React.FC<ModularAvatarProps> = ({
             <stop offset="0%" stopColor="#06b6d4" />
             <stop offset="50%" stopColor="#8b5cf6" />
             <stop offset="100%" stopColor="#ec4899" />
-          </linearGradient>
-          <linearGradient id="beanieGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          </linearGradient>          <linearGradient id="beanieGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#ec4899" />
             <stop offset="100%" stopColor="#be185d" />
           </linearGradient>
@@ -450,6 +514,14 @@ export const ModularAvatar: React.FC<ModularAvatarProps> = ({
             <stop offset="0%" stopColor="#fef08a" />
             <stop offset="50%" stopColor="#fbbf24" />
             <stop offset="100%" stopColor="#b45309" />
+          </linearGradient>
+          <linearGradient id="auraRainbowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ef4444" />
+            <stop offset="20%" stopColor="#f97316" />
+            <stop offset="40%" stopColor="#eab308" />
+            <stop offset="60%" stopColor="#22c55e" />
+            <stop offset="80%" stopColor="#3b82f6" />
+            <stop offset="100%" stopColor="#a855f7" />
           </linearGradient>
 
           {/* Filtri Glow */}
@@ -462,6 +534,10 @@ export const ModularAvatar: React.FC<ModularAvatarProps> = ({
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
           <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+          <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>

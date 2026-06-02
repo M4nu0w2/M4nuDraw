@@ -9,14 +9,56 @@ const roomDrawHistoryMap = new Map<string, DrawData[]>();
 const roomTimerMap = new Map<string, NodeJS.Timeout>();
 const roomTurnScoresMap = new Map<string, Map<string, number>>();
 
-const WORD_DICTIONARY = [
-  'CASA', 'MELA', 'GATTO', 'CANE', 'SOLE', 'PIZZA', 'MACCHINA', 'COMPUTER', 'LIBRO', 'ALBERO',
-  'TAVOLO', 'FIORE', 'TRENO', 'MARE', 'LUNA', 'PANE', 'CASTELLO', 'SCUOLA', 'TELEFONO', 'CHITARRA',
-  'PESCE', 'PALLONE', 'LEONE', 'BOTTIGLIA', 'FINESTRA', 'SEDIA', 'OROLOGIO', 'MATITA', 'STREGA', 'DINOSAURO',
-  'RUOTA PANORAMICA', 'TORRE EIFFEL', 'MONTAGNE RUSSE', 'SACCO A PELO', 'ISOLA DEL TESORO', 'PIRATA DEI CARAIBI',
-  'CANE DA GUARDIA', 'GELATO AL CIOCCOLATO', 'SPAGHETTI AL POMODORO', 'CARTA IGIENICA', 'AEROPLANO', 'ARCOBALENO',
-  'SPAZIO APERTO', 'TORTA DI COMPLEANNO', 'SPAZZOLINO DA DENTI', 'FUOCHI D ARTIFICIO', 'VALIGIA DI CARTONE'
-];
+const WORD_PACKS: Record<string, string[]> = {
+  generale: [
+    'CASA', 'MELA', 'GATTO', 'CANE', 'SOLE', 'PIZZA', 'MACCHINA', 'COMPUTER', 'LIBRO', 'ALBERO',
+    'TAVOLO', 'FIORE', 'TRENO', 'MARE', 'LUNA', 'PANE', 'CASTELLO', 'SCUOLA', 'TELEFONO', 'CHITARRA',
+    'PESCE', 'PALLONE', 'LEONE', 'BOTTIGLIA', 'FINESTRA', 'SEDIA', 'OROLOGIO', 'MATITA', 'STREGA', 'DINOSAURO',
+    'RUOTA PANORAMICA', 'TORRE EIFFEL', 'MONTAGNE RUSSE', 'SACCO A PELO', 'ISOLA DEL TESORO', 'PIRATA DEI CARAIBI',
+    'CANE DA GUARDIA', 'GELATO AL CIOCCOLATO', 'SPAGHETTI AL POMODORO', 'CARTA IGIENICA', 'AEROPLANO', 'ARCOBALENO',
+    'SPAZIO APERTO', 'TORTA DI COMPLEANNO', 'SPAZZOLINO DA DENTI', 'FUOCHI D ARTIFICIO', 'VALIGIA DI CARTONE'
+  ],
+  animali: [
+    'LEONE', 'GATTO', 'CANE', 'ELEFANTE', 'DELFINO', 'SERPENTE', 'AQUILA', 'ORSO', 'TARTARUGA', 'PANDA',
+    'RANA', 'PINGUINO', 'SCIMMIA', 'TIGRE', 'GIRAFFA', 'BALENA', 'SQUALO', 'CORVO', 'FARFALLA', 'ZANZARA',
+    'LUPO', 'VOLPE', 'CONIGLIO', 'PIPISTRELLO', 'CAMMELLO', 'FOCA', 'LEOPARDO', 'PAPPAGALLO', 'IPPOPOTAMO'
+  ],
+  cibo: [
+    'PIZZA', 'PANE', 'GELATO', 'SPAGHETTI', 'HAMBURGER', 'SUSHI', 'MELA', 'BANANA', 'CIOCCOLATO', 'FORMAGGIO',
+    'PATATINE', 'CAFFE', 'BIRRA', 'TORTA', 'POMODORO', 'GELATO AL CIOCCOLATO', 'LASAGNA', 'BISCOTTO', 'CROSTATINA',
+    'PANINO', 'INSALATA', 'ZUPPA', 'WURSTEL', 'COCA COLA', 'ARANCIA', 'FRAGOLA', 'LIMONE', 'PESCA', 'ANGURIA'
+  ],
+  geek: [
+    'SUPER MARIO', 'MINECRAFT', 'PLAYSTATION', 'JOYSTICK', 'POKEMON', 'FORTNITE', 'ZELDA', 'TETRIS', 'PACMAN',
+    'SPIDERMAN', 'BATMAN', 'MINIONS', 'SHREK', 'STEVE JOBS', 'HARRY POTTER', 'STAR WARS', 'DARTH VADER',
+    'SPACESHIP', 'ALIENO', 'ROBOT', 'TIKTOK', 'YOUTUBE', 'NETFLIX', 'SMARTPHONE', 'CYBERPUNK', 'MATRIX'
+  ]
+};
+
+const revealRandomHint = (room: Room, roomId: string, io: Server<ClientToServerEvents, ServerToClientEvents>) => {
+  if (!room.currentWord || !room.currentWordDisguised) return;
+  const word = room.currentWord;
+  const disguised = room.currentWordDisguised.split('');
+  
+  // Trova gli indici delle lettere che sono ancora coperte
+  const hiddenIndices: number[] = [];
+  for (let i = 0; i < word.length; i++) {
+    if (word[i] !== ' ' && disguised[i] === '_') {
+      hiddenIndices.push(i);
+    }
+  }
+
+  // Svela una lettera se ce ne sono almeno 2 coperte (lascia un mistero fino alla fine)
+  if (hiddenIndices.length > 1) {
+    const randIndex = hiddenIndices[Math.floor(Math.random() * hiddenIndices.length)];
+    disguised[randIndex] = word[randIndex];
+    room.currentWordDisguised = disguised.join('');
+    
+    // Invia messaggio di sistema a tutti per annunciare l'indizio!
+    // Usiamo SYSTEM_WARNING in modo che si distingua in chat
+    io.to(roomId).emit('chatMessage', 'SYSTEM_WARNING', `💡 Indizio svelato: la parola contiene la lettera "${word[randIndex]}" alla posizione ${randIndex + 1}! 🎯`);
+  }
+};
 
 const getLevenshteinDistance = (a: string, b: string): number => {
   const tmp = [];
@@ -110,8 +152,9 @@ export const setupSocket = (io: Server<ClientToServerEvents, ServerToClientEvent
     // Svuota la cronologia dei disegni per il nuovo turno
     roomDrawHistoryMap.set(roomId, []);
 
-    // Scegli 3 parole casuali dal dizionario
-    const shuffled = [...WORD_DICTIONARY].sort(() => 0.5 - Math.random());
+    // Scegli 3 parole casuali dal dizionario tematico scelto
+    const activePack = WORD_PACKS[room.wordCategory || 'generale'] || WORD_PACKS['generale'];
+    const shuffled = [...activePack].sort(() => 0.5 - Math.random());
     const choices = shuffled.slice(0, 3);
     roomChoicesMap.set(roomId, choices);
 
@@ -177,6 +220,12 @@ export const setupSocket = (io: Server<ClientToServerEvents, ServerToClientEvent
 
       if (currentRoom.timeLeft && currentRoom.timeLeft > 0) {
         currentRoom.timeLeft -= 1;
+        
+        // Svela un suggerimento a 40 e 20 secondi rimanenti
+        if (currentRoom.timeLeft === 40 || currentRoom.timeLeft === 20) {
+          revealRandomHint(currentRoom, roomId, io);
+        }
+        
         io.to(roomId).emit('roomState', currentRoom);
       } else {
         clearInterval(timerInterval);
@@ -246,7 +295,7 @@ export const setupSocket = (io: Server<ClientToServerEvents, ServerToClientEvent
       console.log(`User ${username} (${socket.id}) joined room ${roomId}`);
     });
 
-    socket.on('startGame', (maxRounds) => {
+    socket.on('startGame', (maxRounds?: number, category?: string) => {
       const userInfo = socketToUserMap.get(socket.id);
       if (userInfo) {
         const { roomId } = userInfo;
@@ -255,8 +304,9 @@ export const setupSocket = (io: Server<ClientToServerEvents, ServerToClientEvent
           room.status = 'PLAYING';
           room.maxRounds = maxRounds || 3;
           room.currentRound = 1;
+          room.wordCategory = category || 'generale';
           io.to(roomId).emit('gameStarted');
-          io.to(roomId).emit('chatMessage', 'SYSTEM', 'La partita sta per iniziare!');
+          io.to(roomId).emit('chatMessage', 'SYSTEM', `La partita sta per iniziare! Categoria: ${room.wordCategory.toUpperCase()}`);
           
           startNewTurn(roomId, 0);
         }
@@ -347,6 +397,45 @@ export const setupSocket = (io: Server<ClientToServerEvents, ServerToClientEvent
       if (userInfo) {
         const { roomId } = userInfo;
         io.to(roomId).emit('emojiReaction', socket.id, emoji);
+      }
+    });
+
+    socket.on('undoStroke', () => {
+      const userInfo = socketToUserMap.get(socket.id);
+      if (userInfo) {
+        const { roomId } = userInfo;
+        const room = rooms.get(roomId);
+        
+        // Permetti l'annullamento solo al disegnatore attivo nel turno
+        if (room && room.status === 'PLAYING' && room.currentDrawerId === socket.id) {
+          const history = roomDrawHistoryMap.get(roomId) || [];
+          if (history.length > 0) {
+            // Trova l'ultimo ID di tratto valido
+            let lastStrokeId: number | undefined;
+            for (let i = history.length - 1; i >= 0; i--) {
+              if (history[i].strokeId !== undefined) {
+                lastStrokeId = history[i].strokeId;
+                break;
+              }
+            }
+            
+            if (lastStrokeId !== undefined) {
+              // Rimuovi tutti i segmenti dell'ultimo tratto
+              const updatedHistory = history.filter(segment => segment.strokeId !== lastStrokeId);
+              roomDrawHistoryMap.set(roomId, updatedHistory);
+              
+              io.to(roomId).emit('clearCanvas');
+              io.to(roomId).emit('drawHistory', updatedHistory);
+            } else {
+              // Fallback se nessun tratto ha ID: rimuove gli ultimi 15 segmenti
+              const updatedHistory = history.slice(0, Math.max(0, history.length - 15));
+              roomDrawHistoryMap.set(roomId, updatedHistory);
+              
+              io.to(roomId).emit('clearCanvas');
+              io.to(roomId).emit('drawHistory', updatedHistory);
+            }
+          }
+        }
       }
     });
 

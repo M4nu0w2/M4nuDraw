@@ -30,6 +30,9 @@ function App() {
   const prevTimeLeftRef = useRef<number | undefined>(undefined);
   const prevTimerTypeRef = useRef<string | undefined>(undefined);
   const prevCorrectGuesserIdsRef = useRef<string[]>([]);
+  
+  // Traccia l'ID della stanza per cui sono già state accreditate le monete a fine partita
+  const lastCreditedRoomRef = useRef<string | null>(null);
 
   // Sincronizza il ref con l'elenco giocatori ogni volta che cambia lo stato della stanza
   useEffect(() => {
@@ -49,6 +52,34 @@ function App() {
 
     socket.on('roomState', (newRoom) => {
       setRoom(newRoom);
+      
+      // Accredito monete al podio alla fine della partita (FINISHED)
+      if (newRoom.status === 'FINISHED' && lastCreditedRoomRef.current !== newRoom.id) {
+        lastCreditedRoomRef.current = newRoom.id;
+        
+        // Ordina i giocatori del podio
+        const sortedPlayers = [...newRoom.players].sort((a, b) => b.score - a.score);
+        const myIndex = sortedPlayers.findIndex(p => p.id === socket.id);
+        
+        if (myIndex !== -1 && myIndex < 3) {
+          let rewardCoins = 0;
+          if (myIndex === 0) rewardCoins = 10;  // 1° Posto
+          else if (myIndex === 1) rewardCoins = 5;  // 2° Posto
+          else if (myIndex === 2) rewardCoins = 3;  // 3° Posto
+          
+          if (rewardCoins > 0) {
+            const currentCoinsStr = localStorage.getItem('m4nu_coins') || '500';
+            const currentCoins = parseInt(currentCoinsStr, 10);
+            const nextCoins = currentCoins + rewardCoins;
+            localStorage.setItem('m4nu_coins', nextCoins.toString());
+          }
+        }
+      }
+
+      // Reimposta il ref se entriamo in LOBBY o PLAYING per prepararsi a una nuova partita
+      if (newRoom.status === 'LOBBY' || newRoom.status === 'PLAYING') {
+        lastCreditedRoomRef.current = null;
+      }
       
       // Reset roundSummary if we enter a new active state
       if (newRoom.timerType === 'CHOOSE_WORD' || newRoom.timerType === 'DRAWING' || newRoom.status === 'LOBBY') {
@@ -181,8 +212,8 @@ function App() {
     socket.emit('chatMessage', text);
   };
 
-  const handleStartGame = (maxRounds?: number) => {
-    socket.emit('startGame', maxRounds);
+  const handleStartGame = (maxRounds?: number, category?: string) => {
+    socket.emit('startGame', maxRounds, category);
   };
 
   const handleBackToLobby = () => {

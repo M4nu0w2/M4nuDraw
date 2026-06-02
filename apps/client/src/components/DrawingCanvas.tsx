@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
 import { ClientToServerEvents, ServerToClientEvents, DrawData } from '@skribbl/shared';
-import { Trash2, Edit2, Eraser } from 'lucide-react';
+import { Trash2, Edit2, Eraser, Undo } from 'lucide-react';
 import { soundManager } from '../utils/sound';
 
 interface DrawingCanvasProps {
@@ -42,6 +42,21 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
   
   // Traccia le coordinate precedenti
   const prevCoordsRef = useRef<{ x: number; y: number } | null>(null);
+  
+  // Traccia l'ID univoco del tratto corrente
+  const strokeIdRef = useRef<number>(0);
+
+  // Gestore scorciatoia Ctrl+Z per annullare
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isDrawer && e.ctrlKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        socket.emit('undoStroke');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isDrawer, socket]);
 
   // Inizializza il canvas
   useEffect(() => {
@@ -152,6 +167,9 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
     const coords = getCanvasCoords(e);
     setIsDrawing(true);
     prevCoordsRef.current = coords;
+    
+    // Inizia un nuovo tratto con ID basato sul timestamp
+    strokeIdRef.current = Date.now() + Math.random();
   };
 
   const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
@@ -185,7 +203,8 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
         tool,
         color: strokeColor,
         size,
-        points: [prevCoords.x, prevCoords.y, coords.x, coords.y]
+        points: [prevCoords.x, prevCoords.y, coords.x, coords.y],
+        strokeId: strokeIdRef.current
       };
       socket.emit('draw', drawData);
 
@@ -207,7 +226,8 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
           tool,
           color: strokeColor,
           size,
-          points: [mx1, prevCoords.y, mx2, coords.y]
+          points: [mx1, prevCoords.y, mx2, coords.y],
+          strokeId: strokeIdRef.current
         };
         socket.emit('draw', mirrorData);
       }
@@ -229,6 +249,11 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
   const handleBomb = () => {
     if (!isDrawer) return;
     socket.emit('bombCanvas');
+  };
+
+  const handleUndo = () => {
+    if (!isDrawer) return;
+    socket.emit('undoStroke');
   };
 
   return (
@@ -323,8 +348,17 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
             
             <div className="h-6 w-[1px] bg-slate-850 mx-2" />
 
-            {/* Pulsanti Pulisci & Bomba */}
+            {/* Pulsanti Annulla, Pulisci & Bomba */}
             <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleUndo}
+                className="p-2 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 active:scale-95 transition-all duration-150 flex items-center gap-1 text-xs font-bold"
+                title="Annulla ultimo tratto (Ctrl+Z)"
+              >
+                <Undo size={14} />
+                Annulla
+              </button>
+
               <button
                 onClick={handleClear}
                 className="p-2 rounded-xl bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 active:scale-95 transition-all duration-150 flex items-center gap-1 text-xs font-bold"
