@@ -7,7 +7,7 @@ import { soundManager } from './utils/sound';
 
 // Connessione al backend (dinamica tra locale e produzione)
 const socketUrl = import.meta.env.VITE_WS_URL || (import.meta.env.PROD
-  ? 'https://m4nudraw-backend.onrender.com' // Fallback di default per Render
+  ? 'https://m4nudraw.onrender.com' // Fallback di default per Render (corretto)
   : 'http://localhost:3001');
 
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(socketUrl);
