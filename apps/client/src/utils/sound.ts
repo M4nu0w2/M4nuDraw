@@ -12,7 +12,7 @@ class SoundManager {
 
   private initCtx() {
     if (!this.ctx) {
-      this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      this.ctx = new (window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)();
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
@@ -193,7 +193,9 @@ class SoundManager {
     if (this.enabled) {
       try {
         this.initCtx();
-      } catch (e) {}
+      } catch (e) {
+        console.warn('Silent audio init failed:', e);
+      }
     }
     return this.enabled;
   }

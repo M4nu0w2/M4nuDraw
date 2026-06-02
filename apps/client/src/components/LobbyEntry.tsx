@@ -129,15 +129,19 @@ export const LobbyEntry: React.FC<LobbyEntryProps> = ({ onJoinRoom }) => {
   };
 
   // FUNZIONI DI NAVIGAZIONE E ACQUISTO CUSTOMIZER
-  const getNextItem = (list: any[], currentId: string, direction: 'next' | 'prev') => {
+  const getNextItem = (list: (string | { id: string })[], currentId: string, direction: 'next' | 'prev'): string => {
     const currentIndex = list.findIndex(item => (typeof item === 'string' ? item === currentId : item.id === currentId));
-    if (currentIndex === -1) return typeof list[0] === 'string' ? list[0] : list[0].id;
+    if (currentIndex === -1) {
+      const first = list[0];
+      return typeof first === 'string' ? first : first.id;
+    }
     
     let nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
     if (nextIndex >= list.length) nextIndex = 0;
     if (nextIndex < 0) nextIndex = list.length - 1;
 
-    return typeof list[nextIndex] === 'string' ? list[nextIndex] : list[nextIndex].id;
+    const chosen = list[nextIndex];
+    return typeof chosen === 'string' ? chosen : chosen.id;
   };
 
   const handleCycleColor = (direction: 'next' | 'prev') => {

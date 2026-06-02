@@ -5,10 +5,10 @@ import { LobbyEntry } from './components/LobbyEntry';
 import { GameRoom } from './components/GameRoom';
 import { soundManager } from './utils/sound';
 
-// Connessione al backend (dinamica tra locale e produzione su Render)
-const socketUrl = import.meta.env.PROD
-  ? 'https://m4nudraw-backend.onrender.com' // Modifica con la tua URL finale di Render!
-  : 'http://localhost:3001';
+// Connessione al backend (dinamica tra locale e produzione)
+const socketUrl = import.meta.env.VITE_WS_URL || (import.meta.env.PROD
+  ? 'https://m4nudraw-backend.onrender.com' // Fallback di default per Render
+  : 'http://localhost:3001');
 
 const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(socketUrl);
 
@@ -178,7 +178,9 @@ function App() {
     });
 
     socket.on('chatMessage', (userId, text) => {
-      const senderName = roomPlayersRef.current.find((p) => p.id === userId)?.username || 'Giocatore';
+      const isGuessed = userId.startsWith('GUESSED_');
+      const cleanUserId = isGuessed ? userId.replace('GUESSED_', '') : userId;
+      const senderName = roomPlayersRef.current.find((p) => p.id === cleanUserId)?.username || 'Giocatore';
       const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       
       setMessages((prev) => [
