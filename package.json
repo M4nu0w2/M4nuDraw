@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev -w @m4nudraw/client\" \"npm run dev -w @m4nudraw/server\"",
-    "build": "npm run build --workspaces",
+    "build": "npm run build -w @m4nudraw/shared && npm run build -w @m4nudraw/client && npm run build -w @m4nudraw/server",
     "build:client": "npm run build -w @m4nudraw/shared && npm run build -w @m4nudraw/client",
     "lint": "npm run lint --workspaces",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""

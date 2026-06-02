@@ -147,37 +147,37 @@ export const LobbyEntry: React.FC<LobbyEntryProps> = ({ onJoinRoom }) => {
   const handleCycleColor = (direction: 'next' | 'prev') => {
     const colorsList = BODY_COLORS.map(c => c.value);
     const nextColor = getNextItem(colorsList, avatar.bodyColor, direction);
-    setAvatar(prev => ({ ...prev, bodyColor: nextColor }));
+    setAvatar((prev: AvatarConfig) => ({ ...prev, bodyColor: nextColor }));
   };
 
   const handleCycleEyes = (direction: 'next' | 'prev') => {
     const nextEyes = getNextItem(AVAILABLE_EYES, avatar.eyes, direction);
-    setAvatar(prev => ({ ...prev, eyes: nextEyes }));
+    setAvatar((prev: AvatarConfig) => ({ ...prev, eyes: nextEyes }));
   };
 
   const handleCycleMouth = (direction: 'next' | 'prev') => {
     const nextMouth = getNextItem(AVAILABLE_MOUTHS, avatar.mouth, direction);
-    setAvatar(prev => ({ ...prev, mouth: nextMouth }));
+    setAvatar((prev: AvatarConfig) => ({ ...prev, mouth: nextMouth }));
   };
 
   const handleCycleHat = (direction: 'next' | 'prev') => {
     const nextHat = getNextItem(AVAILABLE_HATS, avatar.hat, direction);
-    setAvatar(prev => ({ ...prev, hat: nextHat }));
+    setAvatar((prev: AvatarConfig) => ({ ...prev, hat: nextHat }));
   };
 
   const handleCycleGlasses = (direction: 'next' | 'prev') => {
     const nextGlasses = getNextItem(AVAILABLE_GLASSES, avatar.glasses, direction);
-    setAvatar(prev => ({ ...prev, glasses: nextGlasses }));
+    setAvatar((prev: AvatarConfig) => ({ ...prev, glasses: nextGlasses }));
   };
 
   const handleCycleAura = (direction: 'next' | 'prev') => {
     const nextAura = getNextItem(AVAILABLE_AURAS, avatar.aura, direction);
-    setAvatar(prev => ({ ...prev, aura: nextAura }));
+    setAvatar((prev: AvatarConfig) => ({ ...prev, aura: nextAura }));
   };
 
   const handleCycleOutfit = (direction: 'next' | 'prev') => {
     const nextOutfit = getNextItem(AVAILABLE_OUTFITS, avatar.outfit, direction);
-    setAvatar(prev => ({ ...prev, outfit: nextOutfit }));
+    setAvatar((prev: AvatarConfig) => ({ ...prev, outfit: nextOutfit }));
   };
 
   // Controllo stato sbloccato
