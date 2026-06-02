@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
-import { ClientToServerEvents, ServerToClientEvents, DrawData } from '@skribbl/shared';
+import { ClientToServerEvents, ServerToClientEvents, DrawData } from '@m4nudraw/shared';
 import { Trash2, Edit2, Eraser, Undo } from 'lucide-react';
 import { soundManager } from '../utils/sound';
 
@@ -10,17 +10,31 @@ interface DrawingCanvasProps {
 }
 
 const COLORS = [
-  '#000000', // Nero
-  '#f87171', // Rosso
+  '#000000', // Nero Profondo
+  '#475569', // Grigio Scuro
+  '#94a3b8', // Grigio Medio
+  '#cbd5e1', // Grigio Chiaro
+  '#ffffff', // Bianco Puro
+  '#ef4444', // Rosso Vivace
+  '#dc2626', // Rosso Scuro
+  '#f43f5e', // Rosso Fragola
+  '#ff781f', // Arancio Fuoco
   '#fb923c', // Arancione
-  '#facc15', // Giallo
-  '#4ade80', // Verde
-  '#22d3ee', // Celeste
-  '#60a5fa', // Blu
-  '#c084fc', // Viola
+  '#facc15', // Giallo Oro
+  '#fef08a', // Giallo Chiaro
+  '#22c55e', // Verde Erba
+  '#10b981', // Smeraldo
+  '#86efac', // Menta
+  '#22d3ee', // Celeste Acqua
+  '#0ea5e9', // Azzurro Cielo
+  '#3b82f6', // Blu Regale
+  '#1d4ed8', // Blu Navy
+  '#6366f1', // Indaco
+  '#a855f7', // Viola Vivace
+  '#d946ef', // Magenta
   '#f472b6', // Rosa
-  '#78350f', // Marrone
-  '#ffffff'  // Bianco
+  '#78350f', // Marrone Terra
+  '#b45309'  // Marrone Mattone
 ];
 
 const BRUSH_SIZES = [
@@ -259,7 +273,7 @@ export const DrawingCanvas: React.FC<DrawingCanvasProps> = ({ isDrawer, socket }
   return (
     <div className="w-full flex flex-col gap-4">
       {/* Contenitore Canvas con aspect ratio fisso per garantire sincronia coordinate */}
-      <div className={`relative w-full aspect-[8/5] bg-white rounded-2xl border-2 border-slate-800 shadow-lg overflow-hidden group transition-all duration-300 ${shake ? 'animate-shake ring-4 ring-rose-500/40 border-rose-500 shadow-rose-500/10' : ''}`}>
+      <div className={`relative w-full max-h-[300px] md:max-h-[330px] lg:max-h-[360px] xl:max-h-[380px] aspect-[8/5] bg-white rounded-2xl border-2 border-slate-800 shadow-lg overflow-hidden group transition-all duration-300 mx-auto ${shake ? 'animate-shake ring-4 ring-rose-500/40 border-rose-500 shadow-rose-500/10' : ''}`}>
         <canvas
           ref={canvasRef}
           width={800}

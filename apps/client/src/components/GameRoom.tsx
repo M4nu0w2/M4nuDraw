@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Room, RoundResult } from '@skribbl/shared';
+import { Room, RoundResult } from '@m4nudraw/shared';
 import { Socket } from 'socket.io-client';
-import { ClientToServerEvents, ServerToClientEvents } from '@skribbl/shared';
+import { ClientToServerEvents, ServerToClientEvents } from '@m4nudraw/shared';
 import { Copy, Check, Send, LogOut, Users, MessageSquare, Shield, HelpCircle, Palette, Volume2, VolumeX } from 'lucide-react';
 import { getAvatarStyles } from '../utils/avatar';
 import { ModularAvatar } from './ModularAvatar';
@@ -35,6 +35,7 @@ interface GameRoomProps {
 const EMOJIS = ['😂', '😮', '🔥', '🎉', '👑', '💩'];
 
 const THEMES = [
+  { id: 'sketch', name: 'Sketchbook', icon: '✏️' },
   { id: 'cyberpunk', name: 'Cyberpunk', icon: '🌌' },
   { id: 'matrix', name: 'Matrix', icon: '🟢' },
   { id: 'sunset', name: 'Sunset', icon: '🌅' },
@@ -62,7 +63,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
   const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
   
   // STATO PER TEMI E PARTICLE DI REACTION EMOJI
-  const [theme, setTheme] = useState(() => localStorage.getItem('m4nu_theme') || 'cyberpunk');
+  const [theme, setTheme] = useState(() => localStorage.getItem('m4nu_theme') || 'sketch');
   const [emojiParticles, setEmojiParticles] = useState<{ id: number; char: string; left: number }[]>([]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -157,7 +158,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 text-slate-100 flex flex-col p-4 md:p-6 relative overflow-hidden font-sans">
+    <div className="h-screen max-h-screen w-full bg-slate-950/40 bg-doodle-grid text-slate-100 flex flex-col p-4 md:p-5 relative overflow-hidden font-sans box-border">
       {/* Background blobs decorativi */}
       <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full filter blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-pink-600/10 rounded-full filter blur-[120px] pointer-events-none"></div>
@@ -179,7 +180,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
       )}
 
       {/* Header Panel */}
-      <header className="relative z-10 w-full max-w-7xl mx-auto mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 md:p-5 backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl">
+      <header className="relative z-10 w-full max-w-7xl mx-auto mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 md:p-4 backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0 hover:scale-105 transition-transform duration-200 cursor-default select-none">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-10 h-10 drop-shadow-[0_0_8px_rgba(139,92,246,0.3)]">
@@ -304,77 +305,122 @@ export const GameRoom: React.FC<GameRoomProps> = ({
       </header>
 
       {/* Main Grid Layout */}
-      <main className="relative z-10 w-full max-w-7xl mx-auto flex-grow grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <main className="relative z-10 w-full max-w-7xl mx-auto flex-grow grid grid-cols-1 lg:grid-cols-4 gap-6 overflow-hidden min-h-0 h-full pb-2">
         
         {/* Left Side: Players List */}
-        <section className="lg:col-span-1 flex flex-col backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 lg:h-[550px]">
+        <section className="lg:col-span-1 flex flex-col backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 h-full overflow-hidden">
           <h2 className="text-sm font-bold flex items-center justify-between mb-4 text-slate-200 border-b border-slate-850 pb-2">
             <span>Giocatori ({room.players.length}/8)</span>
             <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-bold">Max 8</span>
           </h2>
 
-          <div className="flex-grow space-y-2 overflow-y-auto max-h-[380px] lg:max-h-[500px] pr-1">
-            {room.players.map((player) => {
-              const isMe = player.id === currentPlayerId;
-              const isPlayerHost = player.id === room.ownerId;
-              const isPlayerDrawer = player.id === room.currentDrawerId;
-              const hasGuessed = room.correctGuesserIds?.includes(player.id);
+          <div className="flex-grow space-y-2 overflow-y-auto pr-1 min-h-0">
+            {(() => {
+              const displayedPlayers = [...room.players];
+              if (room.status !== 'LOBBY') {
+                displayedPlayers.sort((a, b) => b.score - a.score);
+              }
+              return displayedPlayers.map((player, index) => {
+                const rank = index + 1;
+                const isMe = player.id === currentPlayerId;
+                const isPlayerHost = player.id === room.ownerId;
+                const isPlayerDrawer = player.id === room.currentDrawerId;
+                const hasGuessed = room.correctGuesserIds?.includes(player.id);
 
-              return (
-                <div
-                  key={player.id}
-                  className={`group relative flex items-center justify-between p-3 rounded-xl border transition-all duration-200 ${
-                    hasGuessed
-                      ? 'bg-emerald-500/5 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.06)]'
-                      : isPlayerDrawer
-                      ? 'bg-purple-600/10 border-purple-500/30 hover:border-purple-500/40'
-                      : isMe
-                      ? 'bg-blue-600/10 border-blue-500/30 hover:border-blue-500/40'
-                      : 'bg-slate-950/60 border-slate-850/60 hover:border-slate-800 hover:bg-slate-900/40'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    {/* Avatar */}
-                    <div className="w-9 h-9 flex items-center justify-center transition-transform group-hover:scale-105 duration-200 overflow-visible bg-transparent">
-                      <ModularAvatar avatar={player.avatar} size={36} animate={false} />
-                    </div>
-                    {/* Details */}
-                    <div>
-                      <div className="font-bold text-xs text-slate-200 flex items-center gap-1.5 flex-wrap">
-                        <span>{player.username}</span>
-                        {isMe && (
-                          <span className="text-[9px] bg-blue-500/20 text-blue-400 font-bold px-1 py-0.2 rounded border border-blue-500/25">
-                            Tu
-                          </span>
-                        )}
-                        {isPlayerHost && (
-                          <span className="text-yellow-500" title="Host della Stanza">
-                            <Shield size={10} className="fill-yellow-500/20" />
-                          </span>
-                        )}
-                        {isPlayerDrawer && (
-                          <span className="text-[9px] bg-purple-500/20 text-purple-400 font-bold px-1 py-0.2 rounded border border-purple-500/25 flex items-center gap-0.5">
-                            <Palette size={8} />
-                            Disegna
-                          </span>
-                        )}
-                        {hasGuessed && (
-                          <span className="text-[8px] bg-emerald-500/20 text-emerald-400 font-extrabold px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-0.5 animate-bounce">
-                            ✓ Indovinato
-                          </span>
-                        )}
+                return (
+                  <div
+                    key={player.id}
+                    className={`group relative flex items-center justify-between p-3 rounded-xl border transition-all duration-300 ${
+                      hasGuessed
+                        ? 'bg-emerald-500/5 border-emerald-500/30 shadow-[0_0_12px_rgba(16,185,129,0.06)]'
+                        : isPlayerDrawer
+                        ? 'bg-purple-600/10 border-purple-500/30 hover:border-purple-500/40'
+                        : isMe
+                        ? 'bg-blue-600/10 border-blue-500/30 hover:border-blue-500/40'
+                        : room.status !== 'LOBBY' && rank === 1
+                        ? 'bg-yellow-500/5 border-yellow-500/20 hover:border-yellow-500/30 shadow-[0_0_15px_rgba(245,158,11,0.05)]'
+                        : room.status !== 'LOBBY' && rank === 2
+                        ? 'bg-slate-400/5 border-slate-400/20 hover:border-slate-400/30'
+                        : room.status !== 'LOBBY' && rank === 3
+                        ? 'bg-amber-600/5 border-amber-600/20 hover:border-amber-600/30'
+                        : 'bg-slate-950/60 border-slate-850/60 hover:border-slate-800 hover:bg-slate-900/40'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      {/* Rank Number Badge */}
+                      {room.status !== 'LOBBY' && (
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black select-none flex-shrink-0 transition-transform duration-200 group-hover:scale-110 shadow-sm ${
+                          rank === 1
+                            ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-slate-950 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
+                            : rank === 2
+                            ? 'bg-gradient-to-r from-slate-300 to-slate-450 text-slate-950 shadow-[0_0_6px_rgba(148,163,184,0.3)]'
+                            : rank === 3
+                            ? 'bg-gradient-to-r from-amber-600 to-amber-700 text-white shadow-[0_0_6px_rgba(180,83,9,0.3)]'
+                            : 'bg-slate-950/80 text-slate-400 border border-slate-850'
+                        }`}>
+                          {rank}°
+                        </div>
+                      )}
+
+                      {/* Avatar */}
+                      <div className="w-9 h-9 flex items-center justify-center transition-transform group-hover:scale-105 duration-200 overflow-visible bg-transparent flex-shrink-0">
+                        <ModularAvatar avatar={player.avatar} size={36} animate={false} />
                       </div>
-                      <div className="text-[10px] text-slate-500 font-medium">Punteggio: {player.score}</div>
+
+                      {/* Details */}
+                      <div>
+                        <div className="font-bold text-xs text-slate-200 flex items-center gap-1.5 flex-wrap">
+                          {room.status !== 'LOBBY' && rank === 1 && (
+                            <span className="text-yellow-400 animate-bounce select-none mr-0.5" title="Primo Posto!">👑</span>
+                          )}
+                          {room.status !== 'LOBBY' && rank === 2 && (
+                            <span className="text-slate-350 select-none mr-0.5" title="Secondo Posto!">🥈</span>
+                          )}
+                          {room.status !== 'LOBBY' && rank === 3 && (
+                            <span className="text-amber-600 select-none mr-0.5" title="Terzo Posto!">🥉</span>
+                          )}
+                          <span>{player.username}</span>
+                          {isMe && (
+                            <span className="text-[9px] bg-blue-500/20 text-blue-400 font-bold px-1 py-0.2 rounded border border-blue-500/25">
+                              Tu
+                            </span>
+                          )}
+                          {isPlayerHost && (
+                            <span className="text-yellow-500" title="Host della Stanza">
+                              <Shield size={10} className="fill-yellow-500/20" />
+                            </span>
+                          )}
+                          {isPlayerDrawer && (
+                            <span className="text-[9px] bg-purple-500/20 text-purple-400 font-bold px-1 py-0.2 rounded border border-purple-500/25 flex items-center gap-0.5">
+                              <Palette size={8} />
+                              Disegna
+                            </span>
+                          )}
+                          {hasGuessed && (
+                            <span className="text-[8px] bg-emerald-500/20 text-emerald-400 font-extrabold px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-0.5 animate-bounce">
+                              ✓ Indovinato
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-semibold mt-0.5">
+                          Punteggio: <span className={
+                            room.status !== 'LOBBY' && rank === 1 ? 'text-yellow-400 font-bold' :
+                            room.status !== 'LOBBY' && rank === 2 ? 'text-slate-300 font-bold' :
+                            room.status !== 'LOBBY' && rank === 3 ? 'text-amber-500 font-bold' :
+                            'text-slate-400'
+                          }>{player.score} XP</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
 
           {/* Start Game Action Bar (LOBBY ONLY) */}
           {room.status === 'LOBBY' && (
-            <div className="mt-4 pt-4 border-t border-slate-850/60 flex flex-col items-center justify-center gap-3">
+            <div className="mt-4 pt-4 border-t border-slate-850/60 flex flex-col items-center justify-center gap-3 flex-shrink-0">
               {isHost ? (
                 <div className="w-full flex flex-col gap-2">
                   <div className="flex items-center justify-between text-[10px] text-slate-400 font-extrabold px-1 tracking-wider">
@@ -440,7 +486,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
         </section>
 
         {/* Center: Drawing Area */}
-        <section className="lg:col-span-2 flex flex-col backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-5 justify-center lg:h-[550px]">
+        <section className="lg:col-span-2 flex flex-col backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 lg:p-5 h-full overflow-hidden min-h-0 justify-between">
           {room.status === 'FINISHED' ? (
             /* Winner podium */
             <div className="flex flex-col items-center justify-center flex-grow p-4 animate-fadeIn overflow-y-auto max-h-full pr-1">
@@ -527,19 +573,38 @@ export const GameRoom: React.FC<GameRoomProps> = ({
               </div>
             </div>
           ) : room.status === 'LOBBY' ? (
-            /* Lobby screen */
-            <div className="flex flex-col items-center justify-center text-center p-8 flex-grow">
-              <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4 animate-pulse">
-                <Users size={32} />
+            /* Lobby screen with real-time settings card */
+            <div className="flex flex-col items-center justify-center text-center p-6 flex-grow animate-fadeIn">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4 shadow-[0_0_15px_rgba(99,102,241,0.1)]">
+                <Users size={28} className="animate-pulse" />
               </div>
-              <h3 className="text-lg font-bold text-slate-200">Benvenuto nella Stanza!</h3>
-              <p className="text-xs text-slate-500 max-w-xs mt-1.5 leading-relaxed">
-                Condividi il codice in alto per invitare i tuoi amici (massimo 8 persone). Quando sarete pronti, l'Host potrà avviare il gioco.
+              <h3 className="text-lg font-black bg-gradient-to-r from-slate-100 to-indigo-300 bg-clip-text text-transparent uppercase tracking-wider">Benvenuto nella Stanza!</h3>
+              <p className="text-xs text-slate-500 max-w-xs mt-1 leading-relaxed">
+                Condividi il codice in alto per invitare i tuoi amici (massimo 8 persone).
               </p>
+              
+              {/* Show selected settings card in real-time to everyone in the lobby! */}
+              <div className="mt-5 p-4 bg-slate-950/60 border border-slate-850/80 rounded-2xl w-full max-w-xs flex flex-col gap-2.5 shadow-lg shadow-indigo-950/10">
+                <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest border-b border-slate-900/60 pb-1.5 flex items-center justify-between">
+                  <span>Impostazioni Partita</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-450 font-medium">Turni Totali:</span>
+                  <span className="font-extrabold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-lg">{room.maxRounds || 3} Turni</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-450 font-medium">Dizionario / Categoria:</span>
+                  <span className="font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg uppercase tracking-wide">🎨 {room.wordCategory || 'Generale'}</span>
+                </div>
+                <div className="mt-1 text-[9px] text-indigo-400/80 font-bold uppercase tracking-wider animate-pulse">
+                  {isHost ? 'Pronto ad avviare la partita!' : 'In attesa dell\'Host per l\'avvio...'}
+                </div>
+              </div>
             </div>
           ) : (
             /* Drawing Canvas area */
-            <div className="flex flex-col flex-grow justify-center relative">
+            <div className="flex flex-col flex-grow justify-center relative h-full overflow-hidden min-h-0">
               {roundSummary && (
                 <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-xl z-30 rounded-2xl flex flex-col items-center justify-center p-6 border border-purple-500/20 shadow-[0_0_50px_rgba(139,92,246,0.15)] animate-[fadeIn_0.3s_ease-out]">
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-yellow-500/20 border border-yellow-500/30 text-yellow-400 flex items-center justify-center mb-2 shadow-[0_0_15px_rgba(245,158,11,0.25)] animate-bounce">
@@ -663,7 +728,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
         </section>
 
         {/* Right Side: Chat & Emoji Reaction Panel */}
-        <section className="lg:col-span-1 flex flex-col backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden h-[420px] lg:h-[550px]">
+        <section className="lg:col-span-1 flex flex-col backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden h-full">
           {/* Chat Header */}
           <div className="px-4 py-3 border-b border-slate-850/60 flex items-center gap-2 bg-slate-900/20">
             <MessageSquare size={16} className="text-slate-400" />
@@ -671,7 +736,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
           </div>
 
           {/* Messages list */}
-          <div className="flex-grow p-4 overflow-y-auto space-y-3 flex flex-col bg-slate-950/20">
+          <div className="flex-grow p-4 overflow-y-auto space-y-3 flex flex-col bg-slate-950/20 min-h-0">
             {messages.length === 0 ? (
               <div className="flex-grow flex flex-col items-center justify-center text-center p-4 text-slate-600">
                 <MessageSquare size={24} className="stroke-[1.5] mb-2 opacity-35" />
@@ -698,8 +763,10 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                   );
                 }
 
+                const isGuessedMessage = msg.senderId.startsWith('GUESSED_');
+                const actualSenderId = isGuessedMessage ? msg.senderId.replace('GUESSED_', '') : msg.senderId;
+                const isMe = actualSenderId === currentPlayerId;
                 const avatar = getAvatarStyles(msg.senderName);
-                const isMe = msg.senderId === currentPlayerId;
                 
                 return (
                   <div key={msg.id} className="flex gap-2 items-start animate-fadeIn">
@@ -714,7 +781,16 @@ export const GameRoom: React.FC<GameRoomProps> = ({
                         </span>
                         <span className="text-[8px] text-slate-600 flex-shrink-0">{msg.time}</span>
                       </div>
-                      <p className="text-[11px] text-slate-400 leading-normal mt-0.5 font-medium select-text break-words">
+                      <p className={`text-[11px] leading-normal mt-0.5 font-medium select-text break-words ${
+                        isGuessedMessage 
+                          ? 'text-emerald-400 font-semibold' 
+                          : 'text-slate-400'
+                      }`}>
+                        {isGuessedMessage && (
+                          <span className="text-[9px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded mr-1.5 select-none font-black uppercase tracking-wider">
+                            ⭐ Indovinato
+                          </span>
+                        )}
                         {msg.text}
                       </p>
                     </div>
@@ -726,7 +802,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
           </div>
 
           {/* Quick Interactive Emojis reactions strip */}
-          <div className="flex justify-around bg-slate-950/65 border-t border-slate-850/60 p-2 gap-1">
+          <div className="flex justify-around bg-slate-950/65 border-t border-slate-850/60 p-2 gap-1 flex-shrink-0">
             {EMOJIS.map((emoji) => (
               <button
                 key={emoji}
@@ -740,7 +816,7 @@ export const GameRoom: React.FC<GameRoomProps> = ({
           </div>
 
           {/* Chat Form */}
-          <form onSubmit={handleSend} className="p-3 border-t border-slate-850/60 bg-slate-900/40">
+          <form onSubmit={handleSend} className="p-3 border-t border-slate-850/60 bg-slate-900/40 flex-shrink-0">
             <div className="relative flex items-center">
               <input
                 type="text"

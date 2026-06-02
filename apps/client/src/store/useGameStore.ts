@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Room, User } from '@skribbl/shared';
+import { Room, User } from '@m4nudraw/shared';
 
 interface GameState {
   room: Room | null;

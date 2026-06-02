@@ -1,5 +1,5 @@
 import React from 'react';
-import { AvatarConfig } from '@skribbl/shared';
+import { AvatarConfig } from '@m4nudraw/shared';
 
 interface ModularAvatarProps {
   avatar?: AvatarConfig;
@@ -71,7 +71,15 @@ export const ModularAvatar: React.FC<ModularAvatarProps> = ({
   className = '',
   animate = true
 }) => {
-  const { bodyColor, eyes, mouth, hat, glasses, aura, outfit = 'none' } = avatar;
+  const { 
+    bodyColor = '#6366f1', 
+    eyes = 'normal', 
+    mouth = 'smile', 
+    hat = 'none', 
+    glasses = 'none', 
+    aura = 'none', 
+    outfit = 'none' 
+  } = avatar || {};
 
   // Render dell'Aura (sfondo retrostante)
   const renderAura = () => {
@@ -576,7 +584,9 @@ export const ModularAvatar: React.FC<ModularAvatarProps> = ({
 
 // Funzione helper per scurire i colori HEX ed ottenere gradienti tridimensionali
 function darkenColor(hex: string, percent: number): string {
-  const num = parseInt(hex.replace('#', ''), 16),
+  if (!hex || typeof hex !== 'string') return '#4f46e5';
+  const cleanHex = hex.startsWith('#') ? hex.replace('#', '') : hex;
+  const num = parseInt(cleanHex, 16),
     amt = Math.round(2.55 * percent),
     R = (num >> 16) - amt,
     G = ((num >> 8) & 0x00ff) - amt,

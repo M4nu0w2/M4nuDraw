@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root, body.theme-cyberpunk {
-  --bg-slate-950: 2 6 23;
-  --bg-slate-900: 15 23 42;
-  --border-slate-800: 30 41 59;
+  --bg-slate-950: 22 28 65;
+  --bg-slate-900: 36 46 95;
+  --border-slate-800: 55 69 130;
   --accent-color: 139 92 246;
   --accent-color-dark: 79 70 229;
   --accent-color-light: 244 114 182;
@@ -13,9 +13,9 @@
 }
 
 body.theme-matrix {
-  --bg-slate-950: 5 18 10;
-  --bg-slate-900: 10 32 18;
-  --border-slate-800: 20 64 36;
+  --bg-slate-950: 15 45 24;
+  --bg-slate-900: 25 70 38;
+  --border-slate-800: 40 100 58;
   --accent-color: 16 185 129;
   --accent-color-dark: 4 120 87;
   --accent-color-light: 52 211 153;
@@ -23,30 +23,38 @@ body.theme-matrix {
 }
 
 body.theme-sunset {
-  --bg-slate-950: 24 10 5;
-  --bg-slate-900: 42 18 8;
-  --border-slate-800: 64 30 14;
-  --accent-color: 245 158 11;
+  --bg-slate-950: 75 22 28;
+  --bg-slate-900: 110 32 40;
+  --border-slate-800: 145 42 52;
+  --accent-color: 249 115 22;
   --accent-color-dark: 217 119 6;
   --accent-color-light: 251 113 133;
   --text-gradient: linear-gradient(to right, #f43f5e, #f59e0b, #fb7185);
 }
 
 body.theme-vaporwave {
-  --bg-slate-950: 26 6 38;
-  --bg-slate-900: 44 10 60;
-  --border-slate-800: 74 16 98;
+  --bg-slate-950: 70 20 85;
+  --bg-slate-900: 105 30 125;
+  --border-slate-800: 140 40 165;
   --accent-color: 236 72 153;
   --accent-color-dark: 219 39 119;
   --accent-color-light: 56 189 248;
   --text-gradient: linear-gradient(to right, #38bdf8, #ec4899, #f472b6);
 }
 
+body.theme-sketch {
+  --bg-slate-950: 28 38 68;
+  --bg-slate-900: 44 58 100;
+  --border-slate-800: 65 82 135;
+  --accent-color: 244 63 94;
+  --accent-color-dark: 225 29 72;
+  --accent-color-light: 251 113 133;
+  --text-gradient: linear-gradient(to right, #fb7185, #f43f5e, #fda4af);
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: rgb(var(--bg-slate-950));
@@ -131,4 +139,25 @@ body {
   background-image: linear-gradient(to right, #ff007f, #7f00ff, #00f0ff, #00ff7f, #ffea00, #ff007f);
   background-size: 400% 400%;
   animation: shimmer 8s linear infinite, hueCycle 4s linear infinite;
+}
+
+/* Sketched / Doodle Blueprint Grid Background Pattern with Theme Accent Color! */
+body {
+  background-image: 
+    radial-gradient(circle at center, rgba(var(--accent-color), 0.25) 0%, rgba(var(--bg-slate-950), 0.94) 100%),
+    linear-gradient(rgba(var(--accent-color), 0.22) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, rgba(var(--accent-color), 0.22) 1.5px, transparent 1.5px);
+  background-size: 100% 100%, 32px 32px, 32px 32px;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.bg-doodle-grid {
+  background-image: 
+    radial-gradient(circle at center, rgba(var(--accent-color), 0.25) 0%, rgba(var(--bg-slate-950), 0.94) 100%),
+    linear-gradient(rgba(var(--accent-color), 0.22) 1.5px, transparent 1.5px),
+    linear-gradient(90deg, rgba(var(--accent-color), 0.22) 1.5px, transparent 1.5px);
+  background-size: 100% 100%, 32px 32px, 32px 32px;
+  background-position: center;
+  background-attachment: fixed;
 }

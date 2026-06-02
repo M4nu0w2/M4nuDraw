@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { ClientToServerEvents, ServerToClientEvents, Room, User, DrawData, RoundResult } from '@skribbl/shared';
+import { ClientToServerEvents, ServerToClientEvents, Room, User, DrawData, RoundResult } from '@m4nudraw/shared';
 
 const rooms = new Map<string, Room>();
 const socketToUserMap = new Map<string, { roomId: string; username: string }>();
@@ -8,6 +8,7 @@ const roomChoicesMap = new Map<string, string[]>();
 const roomDrawHistoryMap = new Map<string, DrawData[]>();
 const roomTimerMap = new Map<string, NodeJS.Timeout>();
 const roomTurnScoresMap = new Map<string, Map<string, number>>();
+const userSpamMap = new Map<string, { timestamps: number[]; warned: boolean }>();
 
 const WORD_PACKS: Record<string, string[]> = {
   generale: [
@@ -444,6 +445,27 @@ export const setupSocket = (io: Server<ClientToServerEvents, ServerToClientEvent
       if (userInfo) {
         const { roomId, username } = userInfo;
         const room = rooms.get(roomId);
+
+        // --- SPAM PROTECTION RATE LIMITER ---
+        const now = Date.now();
+        if (!userSpamMap.has(socket.id)) {
+          userSpamMap.set(socket.id, { timestamps: [], warned: false });
+        }
+        const spamData = userSpamMap.get(socket.id)!;
+        spamData.timestamps = spamData.timestamps.filter(ts => now - ts < 3000);
+        spamData.timestamps.push(now);
+
+        if (spamData.timestamps.length > 5) {
+          if (!spamData.warned) {
+            spamData.warned = true;
+            socket.emit('chatMessage', 'SYSTEM_WARNING', '⚠️ SPAM RILEVATO: Non spammare in chat, o verrai kickato dalla lobby! ⚠️');
+            return;
+          } else {
+            io.to(roomId).emit('chatMessage', 'SYSTEM', `🚫 ${username} è stato kickato per spam in chat!`);
+            socket.disconnect(true);
+            return;
+          }
+        }
         
         if (room && room.status === 'PLAYING' && room.wordChosen && room.currentWord) {
           if (socket.id === room.currentDrawerId) {
@@ -451,8 +473,17 @@ export const setupSocket = (io: Server<ClientToServerEvents, ServerToClientEvent
             return;
           }
 
-          // Se l'utente ha già indovinato, non gli permettiamo di indovinare di nuovo
-          if (room.correctGuesserIds?.includes(socket.id)) {
+          // Se l'utente ha già indovinato, i suoi messaggi sono visibili solo agli altri indovini e al disegnatore
+          const hasAlreadyGuessed = room.correctGuesserIds?.includes(socket.id);
+          if (hasAlreadyGuessed) {
+            room.players.forEach(p => {
+              const isGuesser = room.correctGuesserIds?.includes(p.id);
+              const isDrawer = p.id === room.currentDrawerId;
+              if (isGuesser || isDrawer) {
+                io.to(p.id).emit('chatMessage', `GUESSED_${socket.id}`, message);
+              }
+            });
+            console.log(`[Guesser Chat - ${roomId}] ${username}: ${message}`);
             return;
           }
 
@@ -574,6 +605,7 @@ export const setupSocket = (io: Server<ClientToServerEvents, ServerToClientEvent
           }
         }
         socketToUserMap.delete(socket.id);
+        userSpamMap.delete(socket.id);
       }
     });
   });

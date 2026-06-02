@@ -12,13 +12,14 @@ import {
   AVAILABLE_OUTFITS,
   DEFAULT_AVATAR
 } from './ModularAvatar';
-import { AvatarConfig } from '@skribbl/shared';
+import { AvatarConfig } from '@m4nudraw/shared';
 
 interface LobbyEntryProps {
   onJoinRoom: (roomId: string, username: string, avatar: AvatarConfig) => void;
 }
 
 const THEMES = [
+  { id: 'sketch', name: 'Sketchbook', icon: '✏️' },
   { id: 'cyberpunk', name: 'Cyberpunk', icon: '🌌' },
   { id: 'matrix', name: 'Matrix', icon: '🟢' },
   { id: 'sunset', name: 'Sunset', icon: '🌅' },
@@ -30,7 +31,7 @@ export const LobbyEntry: React.FC<LobbyEntryProps> = ({ onJoinRoom }) => {
   const [roomCode, setRoomCode] = useState('');
   const [error, setError] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(soundManager.isEnabled());
-  const [theme, setTheme] = useState(() => localStorage.getItem('m4nu_theme') || 'cyberpunk');
+  const [theme, setTheme] = useState(() => localStorage.getItem('m4nu_theme') || 'sketch');
 
   // Sincronizza il tema scelto
   useEffect(() => {
@@ -228,7 +229,7 @@ export const LobbyEntry: React.FC<LobbyEntryProps> = ({ onJoinRoom }) => {
     (!isItemUnlocked(avatar.outfit));
 
   return (
-    <div className="min-h-screen w-full bg-slate-950 text-slate-100 flex items-center justify-center p-4 relative overflow-hidden font-sans">
+    <div className="min-h-screen w-full bg-slate-950/40 bg-doodle-grid text-slate-100 flex items-center justify-center p-4 relative overflow-hidden font-sans">
       {/* Background blobs for premium glassmorphism effect */}
       <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-blue-600/20 rounded-full filter blur-[80px] animate-pulse"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full filter blur-[100px] animate-pulse delay-700"></div>

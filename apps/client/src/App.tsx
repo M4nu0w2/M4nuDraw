@@ -1,12 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { ClientToServerEvents, ServerToClientEvents, Room, User, RoundResult, AvatarConfig } from '@skribbl/shared';
+import { ClientToServerEvents, ServerToClientEvents, Room, User, RoundResult, AvatarConfig } from '@m4nudraw/shared';
 import { LobbyEntry } from './components/LobbyEntry';
 import { GameRoom } from './components/GameRoom';
 import { soundManager } from './utils/sound';
 
-// Connessione al backend
-const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io('http://localhost:3001');
+// Connessione al backend (dinamica tra locale e produzione su Render)
+const socketUrl = import.meta.env.PROD
+  ? 'https://m4nudraw-backend.onrender.com' // Modifica con la tua URL finale di Render!
+  : 'http://localhost:3001';
+
+const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(socketUrl);
 
 interface Message {
   id: string;

@@ -1,5 +1,5 @@
 {
-  "name": "@skribbl/client",
+  "name": "@m4nudraw/client",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@skribbl/shared": "*",
+    "@m4nudraw/shared": "*",
     "konva": "^9.3.6",
     "lucide-react": "^0.378.0",
     "react": "^18.2.0",
